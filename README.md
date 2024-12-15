@@ -12,7 +12,7 @@ Development of a GPT capable of synthesizing information from a call for proposa
 - **README.md:** This file you are reading right now 
 - **LICENSE:** MIT License
 - **docker-compose.yml:** Docker compose file
-- **docker-compose.override.yml:** Docker compose file for development
+- **docker-compose.override.yml:** Docker compose file for development (delete if GPU is used)
 - **DockerFile:** Docker file for the n8n instance
 - **n8n_pipe.py:** Python script for the n8n instance
 - **.env.example:** Example .env file
@@ -23,28 +23,28 @@ Development of a GPT capable of synthesizing information from a call for proposa
 
 After downloading the code from the **source** folder, follow these steps to run the application:  
 
-**1. Create the environment into crawler folder:**  
-
-> python -m venv *env_name*  
-
+**1. Create the environment (venv) into crawler folder:**  
+```
+python -m venv venv  
+```
 **2. Activate the environment:**  
 
   Windows:  
-
-> *env_name*\Scripts\activate  
-
+```
+venv\Scripts\activate  
+```
   macOS & Linux:  
-
-> *env_name*/bin/activate  
-
+```
+venv/bin/activate  
+```
 **3. Install the libraries:**  
-
-> pip install -r requirements.txt  
-
+```
+pip install -r requirements.txt  
+```
 **4. Start the crawl program:**  
-
-> python main.py  
-
+```
+python main.py  
+```
 
 ## Installation (Docker)
 
@@ -212,9 +212,9 @@ After downloading the code from the **source** folder, follow these steps to run
 > pip install -r requirements.txt  
 
 **4. Start the crawl program:**  
-
-> python main.py  
-
+```
+python main.py  
+```
 
 ## Installation (Docker)
 
