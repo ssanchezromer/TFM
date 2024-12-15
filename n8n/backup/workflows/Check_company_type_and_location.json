@@ -1,0 +1,105 @@
+{
+  "name": "Check company type and location",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -20
+      ],
+      "id": "12287f6c-42ed-4d26-b44d-ded193743327",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "089bb3ce-1ee6-48ff-b5ab-c5d903de45bb",
+              "name": "type_company",
+              "value": "={{ $json.type_company }}",
+              "type": "string"
+            },
+            {
+              "id": "5b0e61db-216c-43ad-ba06-d948371a2b47",
+              "name": "location",
+              "value": "={{ $json.location }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        -20
+      ],
+      "id": "ab95217b-0a29-411e-88fe-7cd7a3c06822",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/check-company-and-location",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type_company\": \"{{ $json.type_company }}\",\n  \"location\": \"{{ $json.location }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        -20
+      ],
+      "id": "00622f07-7938-4932-a796-0e02ace970d2",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6d4595fa-36e8-4137-b99a-74bc924e405a",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "kRqHeqQ4mB1zeFXr",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

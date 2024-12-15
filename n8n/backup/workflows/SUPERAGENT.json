@@ -1,0 +1,458 @@
+{
+  "name": "SUPERAGENT",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json.body?.chatInput || $json.chatInput}}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json.body?.sessionId || $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "42253970-3e07-4ea0-b47e-f12d165b2b90",
+              "name": "fix_query",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "7cb269b1-325b-4a5c-aeaa-f099a526c95a",
+              "name": "limit",
+              "value": "3",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a2e36cbf-8ef4-4372-8e6e-58157f67a7ca",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "319286eb-5645-4b02-81ac-fb3d8445b9a1",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9d60e5b8-fb6b-43dc-91ca-35758b338290",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        20,
+        40
+      ],
+      "webhookId": "319286eb-5645-4b02-81ac-fb3d8445b9a1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        20,
+        -180
+      ],
+      "id": "82ca54e4-1ef2-4d6e-a4ea-e9072a119d8e",
+      "name": "When chat message received",
+      "webhookId": "a8c3d575-7871-4d6d-a2b3-5b543eb3efe4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "771e75c6-4889-44b3-9400-25db11090f60",
+      "name": "Respond to Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        340
+      ],
+      "id": "4a36b39d-12ea-46ab-8218-8817849cf8d3",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        340
+      ],
+      "id": "a4c55c84-3f1b-464d-ae0b-fe22a409fa70",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        160,
+        340
+      ],
+      "id": "d414c758-1604-4def-947d-e7ce240b0af6",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "name": "get_schema",
+        "description": "Call this tool to get a mysql database schema.",
+        "workflowId": {
+          "__rl": true,
+          "value": "DLnGtpP6QA5rLqef",
+          "mode": "list",
+          "cachedResultName": "Get schema"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        300,
+        340
+      ],
+      "id": "8d8e0560-acbe-4d25-855f-5f3898475f11",
+      "name": "Get Schema"
+    },
+    {
+      "parameters": {
+        "name": "search_qdrant",
+        "description": "Searches for relevant information in the Qdrant vector database using an array of file_id (obtained from a specific call_code and call_title) Also is required a user query (chatInput), a sessionId and limit. The limit parameter specifies the maximum number of documents to search for based on similarity. ",
+        "workflowId": {
+          "__rl": true,
+          "value": "CjpHbo95Aq1DGLtj",
+          "mode": "list",
+          "cachedResultName": "Search Qdrant"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "chatInput",
+              "stringValue": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "sessionId",
+              "stringValue": "={{ $json.sessionId }}"
+            },
+            {
+              "name": "limit",
+              "stringValue": "={{ $json.limit }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        900,
+        340
+      ],
+      "id": "f049d9ff-7fc3-417a-8c94-ec70ad255db9",
+      "name": "Search Qdrant"
+    },
+    {
+      "parameters": {
+        "name": "get_file_id",
+        "description": "Determines the relevant call_code and call_title based on user input and context. It then retrieves all associated file_id from the database and returns them as an array, allowing targeted access to specific files linked to a particular call for proposals or grant.",
+        "workflowId": {
+          "__rl": true,
+          "value": "UtyxfTOZYZZbi3oa",
+          "mode": "list",
+          "cachedResultName": "Get file id"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "chatInput",
+              "stringValue": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "sessionId",
+              "stringValue": "={{ $json.sessionId }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        740,
+        340
+      ],
+      "id": "4af60110-859e-4c32-b357-4f19a0bab012",
+      "name": "Get File ID"
+    },
+    {
+      "parameters": {
+        "name": "search_sql",
+        "description": "**Description**:  \nThe `search_sql` tool is designed to process natural language queries related to grant and proposal data stored in a relational database. It performs two critical functions:  \n\n1. **Generate SQL Queries**: Converts user input into a valid `SELECT` SQL query based on the schema of the database.  \n2. **Execute SQL Queries**: Runs the generated `SELECT` query against the database and retrieves structured results.  \n\nThis tool ensures that only read-only operations (`SELECT` statements) are executed, maintaining data integrity and security.  \n\n**Key Features**:  \n- **Validation**: Automatically verifies the correctness of the SQL query using the schema of the database.  \n- **Error Handling**: Returns an empty response if the input contains invalid SQL or non-`SELECT` operations.  \n- **Integrated Workflow**: Works seamlessly with other tools, enabling advanced filtering and data analysis in combination with vector search and company details retrieval.  \n\n**Inputs**:  \n- `query` (string): The natural language input or potential SQL statement provided by the user.  \n\n**Outputs**:  \n- The validated and executed `SELECT` SQL query results, or an empty string if the input query is invalid.  \n\n**Constraints**:  \n- No modification commands (`INSERT`, `UPDATE`, `DELETE`, etc.) are allowed.  \n- SQL validation is based on the schema retrieved from the database.  \n\nUse `search_sql` to ensure accurate, secure, and efficient retrieval of relational data for grant and proposal analysis.  ",
+        "workflowId": {
+          "__rl": true,
+          "value": "pOhpefMBcpofSDwm",
+          "mode": "list",
+          "cachedResultName": "Search SQL"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "chatInput",
+              "stringValue": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "sessionId",
+              "stringValue": "={{ $json.sessionId }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        580,
+        340
+      ],
+      "id": "16ed32e6-cc62-4768-928f-f43ac35276a5",
+      "name": "Search SQL"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an advanced AI assistant specializing in grants and calls for proposals. Your primary responsibility is to analyze user queries and orchestrate various tools to generate accurate and insightful responses.  \n\n### **Data Sources:**  \n- **Relational Database (calls)**: Contains structured information about calls for proposals, including tables like **calls_basic_information**, **calls_budget_information**, **calls_description_information**, and **calls_files_information**. This database provides details such as **call_code**, **call_title**, **status**, **budgets**, and **submission deadlines**.  \n- **Vector Database (Qdrant)**: Stores **embeddings** representing the content of documents and proposals. It enables quick searches for **relevant call information, descriptions, and associated files**, ensuring insights based on textual similarity.  \n\n---\n\n### **Equipped Tools:**  \n1. **get_schema**: Retrieves the schema of the relational database to understand table structures and relationships.  \n2. **search_sql**: Converts natural language queries into valid **SELECT SQL statements** based on the schema. Then runs these SELECT queries on the relational database and returns results.  \n3. **search_qdrant**: Searches the vector database for relevant embeddings linked to specific grant information (**call_code, call_title**).  \n4. **get_company_type_and_location**: Retrieves the type and location of a company based on **company name, domain, or CIF**.  \n5. **calculator**: Performs arithmetic and financial calculations related to **budget queries and estimations**.  \n6. **get_file_id**: Identifies **call_code and call_title** based on context and queries, then retrieves **all associated file_ids** as an array.\n\n---\n\n### **Workflow**  \n1. **User Query Processing**:  \n   Analyze the user's request to determine the relevant tools for executing it.\n   \n2. **SQL Query Generation and Execution**:  \n   - Use **`search_sql`** to **generate a valid `SELECT` statement** based on natural language input.\n   - Execute the query against the relational database, ensuring only **`SELECT` operations** (no data modification commands).\n\n3. **Vector Database Integration**:  \n   If necessary, use **`search_qdrant`** to locate relevant embeddings in Qdrant, enriching insights.\n\n4. **Content Filtering**  \n   When **type_company** and **location** are specified:\n   - Filter database content according to **type_company** and **location** fields in the **`calls_basic_information`** table to provide accurate, targeted results.\n\n5. **Result Aggregation and Presentation**  \n   Combine and summarize information clearly, ensuring insights are presented in a user-friendly manner.\n\n---\n\n### **Constraints**  \n- **No Internet Searches**: Only rely on existing tools and databases.  \n- **Strict SQL Select Only**: Ensure **no UPDATE, INSERT, CREATE**, or any operation that modifies the database.  \n- **Data Integrity**: No hallucinating responses or inventing non-existent information.",
+          "maxIterations": 15
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        440,
+        -60
+      ],
+      "id": "b751928f-95ca-4eaa-8220-f5619e50f583",
+      "name": "SUPERAGENT",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "notesInFlow": true,
+      "notes": "AI orchestrator for grants"
+    },
+    {
+      "parameters": {
+        "name": "get_company_type_and_location",
+        "description": "Retrieves company details including type and location information based on the provided company name, URL or CIF identification.\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "FwAZeP4Berwnv4qz",
+          "mode": "list",
+          "cachedResultName": "Get company type and location"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        440,
+        340
+      ],
+      "id": "3b4ccb91-e376-42b0-a39b-cbcb176fa565",
+      "name": "Get company type and location"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        []
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Schema": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Qdrant": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File ID": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search SQL": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SUPERAGENT": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get company type and location": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b19bb7ba-00f7-452d-967a-e369480da398",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "8Jf3isOLehcbu3cs",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

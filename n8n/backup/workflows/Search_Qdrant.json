@@ -1,0 +1,126 @@
+{
+  "name": "Search Qdrant",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "c9ee08f6-c575-44b1-b5a0-e7370404d9c7",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/get-points",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"question\": \"{{ $json.question }}\",\n  \"field_id\": [{{ $json.field_id.join(\",\") }}],\n  \"limit\": {{ $json.limit }}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        200,
+        0
+      ],
+      "id": "e715603a-25f2-40ad-9eea-907e70cd0844",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4b96b5d8-37fc-465b-8a21-bbd41899233c",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "81325cba-df80-4e3b-850d-f87714e6b378",
+              "name": "field_id",
+              "value": "={{ $json.query }}",
+              "type": "array"
+            },
+            {
+              "id": "3fdba295-c22a-4730-92da-a383eb307482",
+              "name": "limit",
+              "value": "={{ $json.limit }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -20,
+        0
+      ],
+      "id": "68c89135-7d1c-4046-a65d-0014acd7b2b8",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "When clicking ‘Test workflow’": [
+      {
+        "json": {
+          "query": "[123, 456]",
+          "chatInput": "My company is in Europe. How many grants are available for my company?",
+          "sessionId": "51259e769bb547ffb46626330da3832a",
+          "limit": "3"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c7655162-4328-4345-9518-63b3a1266b94",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "CjpHbo95Aq1DGLtj",
+  "tags": []
+}

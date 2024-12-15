@@ -1,0 +1,348 @@
+{
+  "name": "Search SQL",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91266cf5-ac91-40f7-b7b5-b80a0c496972",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3ae3c945-a080-461a-a44f-8cae5e420c9e",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -280,
+        -40
+      ],
+      "id": "16f51d3b-b7ad-4aea-b3cd-8062eff8e016",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryManager",
+      "typeVersion": 1.1,
+      "position": [
+        -100,
+        -40
+      ],
+      "id": "b06d4d7e-5bb5-469c-b330-8d02d8a739d2",
+      "name": "Chat Memory Manager"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        140
+      ],
+      "id": "4bc98e4e-3a13-463c-920f-ce08b3cd0e87",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "messages",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        200,
+        -40
+      ],
+      "id": "9ce7fd6e-4862-4c92-8d05-e09a0472e88f",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are a data analyst at a company. You are interacting with a user who is asking you questions about the company's database.\n\nBased on the table schema available in the tool (get_schema), retrieve the schema details first, and then write a SQL query to answer the user's question. Take the conversation history into account.\n\n    Conversation History: {{ $('Mapping').item.json.chat_history }}\n\n    Write only the SQL query and nothing else. Do not wrap the SQL query in any other text, not even backticks. \n\n    For example:\n    Question: how many calls have the status open?\n    SQL Query: SELECT COUNT(*) as callsOpened FROM calls_basic_information WHERE LOWER(status) LIKE '%open%';\n    Question: Give me the call with the highest budget\n    SQL Query: SELECT * FROM calls_basic_information ORDER BY budget_total DESC LIMIT 1;\n    Question: Are there any calls with topic description based on contamination?\n    SQL Query: SELECT * FROM calls_description_information WHERE LOWER(topic_description) LIKE '%contamination%';\n    Question: Give me more information about the call we are discussing. Ex. call_code 'HORIZON-CL3-2024-SSRI-01-02' and call_title 'Accelerating uptake through open proposals for advanced SME innovation'\n    SQL Query: SELECT file_text, file_summary FROM calls_files_information WHERE call_id_code='HORIZON-CL3-2024-SSRI-01-02' and call_title='Accelerating uptake through open proposals for advanced SME innovation';\n\n    Your turn:\n\n    Question: {{ $json.chatInput }}\n    SQL Query:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        560,
+        -40
+      ],
+      "id": "6372fadc-1547-471b-b6ba-de141117a9f7",
+      "name": "Mysql query"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        520,
+        200
+      ],
+      "id": "0cbb3646-bda4-4026-9101-31f16674161f",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        1100,
+        -40
+      ],
+      "id": "8f328b83-3bd5-45fd-89af-b26270a0f9ba",
+      "name": "MySQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "YVMSvciBFRX5zwTd",
+          "name": "MySQL account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bc15166f-1281-4b35-9778-20e4b950f86a",
+              "name": "=chat_history",
+              "value": "={{ $json.messages[0].messages.toJsonString() }}",
+              "type": "string"
+            },
+            {
+              "id": "61e2ba8f-1360-411e-a409-05cdcd8439a5",
+              "name": "chatInput",
+              "value": "={{ $('Edit Fields').item.json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        360,
+        -40
+      ],
+      "id": "d4ce33eb-d3a2-4271-b780-1639cdd468c5",
+      "name": "Mapping"
+    },
+    {
+      "parameters": {
+        "name": "get_schema",
+        "description": "Call this tool to get a mysql database schema.",
+        "workflowId": {
+          "__rl": true,
+          "value": "DLnGtpP6QA5rLqef",
+          "mode": "list",
+          "cachedResultName": "Get schema"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        200
+      ],
+      "id": "f3ee323b-68e2-4155-8d64-6d321db259c0",
+      "name": "Get Schema"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -40
+      ],
+      "id": "5039d773-46ca-4354-9a82-a19e92262577",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import re\n# Loop over input items and add a new field called 'myNewField' to the JSON of each one\nsql = _input.first().json[\"output\"]\n\n# Regular expression pattern\npattern = r\"SELECT\\s.*?;\"\n\n# Extracting the query\nmatches = re.findall(pattern, sql, re.IGNORECASE | re.DOTALL)\nif matches:\n  sql = matches[0]  # Assuming there's only one SELECT query\n  if \"INSERT\" in sql or \"DELETE\" in sql or \"UPDATE\" in sql or \"ALTER\" in sql or \"CREATE\" in sql:\n    return {\"output\": None}\n   \nelse:\n    print(\"No valid SELECT query found.\")\n\nreturn {\"output\": sql}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        -40
+      ],
+      "id": "97013c67-5627-479f-979f-6448e34c46f2",
+      "name": "Extract SQL secure"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Chat Memory Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chat Memory Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory Manager": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mysql query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mysql query": {
+      "main": [
+        [
+          {
+            "node": "Extract SQL secure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        []
+      ]
+    },
+    "Mapping": {
+      "main": [
+        [
+          {
+            "node": "Mysql query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Schema": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mysql query",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract SQL secure": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "280c2b14-571e-4996-89a1-2a134266df2c",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "pOhpefMBcpofSDwm",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

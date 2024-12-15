@@ -1,0 +1,358 @@
+{
+  "name": "Question fix",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "question_fix",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        60
+      ],
+      "id": "93a23ff1-31da-4d3e-8268-9584c0e94038",
+      "name": "Webhook",
+      "webhookId": "a04c582e-a2eb-454f-bcd0-bd342be29dd1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91266cf5-ac91-40f7-b7b5-b80a0c496972",
+              "name": "chatInput",
+              "value": "={{ $json.query.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3ae3c945-a080-461a-a44f-8cae5e420c9e",
+              "name": "sessionId",
+              "value": "={{ $json.query.sessionId}}",
+              "type": "string"
+            },
+            {
+              "id": "52d9b667-4463-4c68-8063-8d544199676c",
+              "name": "fix_query",
+              "value": "={{ $json.query.fix_query}}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        60
+      ],
+      "id": "e02ec0e3-59e3-43fa-a539-4e7b9cb80ee8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are an expert assistant in grants and calls for proposals. Your task is to rephrase user questions to align them with the technical language and terminology used in this domain.\n\nRephrase the following question while strictly maintaining its intent and meaning, using precise, technical, and professional language. Do not add or omit information, introduce assumptions, or modify the original purpose of the question.\n\nProvide only the rephrased question as plain text. Do not include explanations, examples, comments, or multiple options. Respond exclusively with a single rephrased question.\n\nExamples:\nUser question: \"Who can participate?\"\nRephrased: \"What are the eligibility requirements for beneficiaries in grant calls?\"\n\nUser question: \"How many calls are there?\"\nRephrased: \"How many open calls are currently in the system?\"\n\nUser question: \"When does the call start?\"\nRephrased: \"What is the start date of the call?\"\n\nYour turn.\nUser question: \"{{ $('Edit Fields').item.json.chatInput }}\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        320,
+        -200
+      ],
+      "id": "b0045892-2bec-4d54-a37e-c58efa9ecbf5",
+      "name": "Question fix"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -20
+      ],
+      "id": "e3395a31-50d9-4029-aa67-ee643d29f031",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "717ca5f5-48e2-444b-aa7a-4a9c4b6ed298",
+              "name": "=chatInput",
+              "value": "={{ $('Edit Fields').item.json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "d4190349-022a-49ab-8e69-e41ba8464aec",
+              "name": "schema",
+              "value": "={{ $('Edit Fields').item.json.schema }}",
+              "type": "string"
+            },
+            {
+              "id": "25c53239-7751-47ec-8c16-505623869dcf",
+              "name": "sessionId",
+              "value": "={{ $('Edit Fields').item.json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        180
+      ],
+      "id": "d93ded18-2a59-43eb-a434-eae86e32a2ba",
+      "name": "EF not query fix"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9035da9f-8c52-4dd5-baa7-c9a5fffdab2e",
+              "name": "chatInput",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "a7c51c51-4018-4d52-904b-b46508d0b3ed",
+              "name": "schema",
+              "value": "USE calls;  CREATE TABLE calls_basic_information (     call_code VARCHAR(250) NOT NULL,     call_title VARCHAR(250) NOT NULL,     call_href VARCHAR(250) NOT NULL,     call_type VARCHAR(250),     opening_date VARCHAR(250),     next_deadline VARCHAR(250),     deadline_model VARCHAR(250),     status VARCHAR(100),     programme VARCHAR(250),     type_of_action VARCHAR(250),     budget_total FLOAT,     scope VARCHAR(100) NOT NULL,     type_company VARCHAR(100),     PRIMARY KEY (call_code, call_title) ) COMMENT='Calls basic information' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;  CREATE TABLE calls_budget_information (     call_code VARCHAR(250) NOT NULL,     call_title VARCHAR(250) NOT NULL,     budget_topic VARCHAR(250) NOT NULL,     budget_amount VARCHAR(250) NOT NULL,     budget_stages VARCHAR(250) NOT NULL,     budget_opening_date VARCHAR(250) NOT NULL,     budget_deadline VARCHAR(250) NOT NULL,     budget_contributions VARCHAR(250) NOT NULL,     budget_indicative_number_of_grants VARCHAR(250) NOT NULL,     PRIMARY KEY (call_code, call_title, budget_topic) ) COMMENT='Calls budget information' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;  CREATE TABLE calls_description_information (     call_code VARCHAR(250) NOT NULL,     call_title VARCHAR(250) NOT NULL,     topic_description TEXT NOT NULL,     topic_destination TEXT NOT NULL,     topic_conditions_and_documents TEXT NOT NULL,     budget_overview TEXT NOT NULL,     partner_search_announcements TEXT NOT NULL,     start_submission TEXT NOT NULL,     get_support TEXT NOT NULL,     extra_information TEXT NOT NULL,     PRIMARY KEY (call_code, call_title) ) COMMENT='Calls description information' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;  CREATE TABLE calls_files_information (     id BIGINT NOT NULL AUTO_INCREMENT,     file_url VARCHAR(250) NOT NULL,     file_text MEDIUMTEXT NOT NULL,     file_summary TEXT NOT NULL,     file_error_description VARCHAR(250),     file_error_code VARCHAR(100),     PRIMARY KEY (id) ) COMMENT='Calls files information' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;  CREATE TABLE calls_urls (     call_code VARCHAR(250) NOT NULL,     call_title VARCHAR(250) NOT NULL,     file_id BIGINT NOT NULL,     file_title VARCHAR(250) NOT NULL,     PRIMARY KEY (call_code, call_title, file_id, file_title),     CONSTRAINT fk_file_id FOREIGN KEY(file_id) REFERENCES calls_files_information (id) ) COMMENT='Calls urls relationship' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+              "type": "string"
+            },
+            {
+              "id": "72e9a76d-06f2-4ae7-a967-44aa9e6f2a65",
+              "name": "sessionId",
+              "value": "={{ $('Edit Fields').item.json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -60
+      ],
+      "id": "673fa0b4-b306-4e70-ad7e-1679a658e10a",
+      "name": "EF query fix"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "730aed7b-f8e6-41b3-a4aa-199145276170",
+              "leftValue": "={{ $('Edit Fields').item.json.fix_query }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0f5412f2-4071-4e1c-8b03-a6e076a92410",
+              "leftValue": "={{ $('Edit Fields').item.json.fix_query }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "4041a47d-819a-4d17-853d-4bfb54947719",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        100,
+        60
+      ],
+      "id": "a10d0977-aa00-49ca-a5f3-14d05d725f22",
+      "name": "If fix query?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        840,
+        60
+      ],
+      "id": "bfc95d4e-7315-4168-949a-948505717687",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1060,
+        60
+      ],
+      "id": "4e0b5353-2581-4ff0-9b54-dc599773e538",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If fix query?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question fix",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question fix": {
+      "main": [
+        [
+          {
+            "node": "EF query fix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If fix query?": {
+      "main": [
+        [
+          {
+            "node": "Question fix",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "EF not query fix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EF query fix": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EF not query fix": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4dd01d0f-ab1e-46e5-9548-d95943295560",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "D8Lq6tl5lEuIwrwM",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}
