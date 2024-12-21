@@ -6,7 +6,7 @@ import requests
 
 
 class EmbeddingGenerator:
-    def __init__(self, url="http://ollama:11434"):
+    def __init__(self, url="http://localhost:11434"):
         self.url = url
 
     def get_embedding(self, text):
@@ -50,22 +50,34 @@ class QdrantVectorial:
         self.error_message = ""
         try:
             self.client = QdrantClient(host=host, port=port)
+            print(f"Connected to Qdrant at http://{host}:{port}")
             # define encoder model (ollama local server)
             self.encoder = EmbeddingGenerator(url="http://"+host+":11434")
+            print(f"Connected to Ollama at http://{host}:11434")
             self.collection_name = collection_name
             # create collection if it doesn't exist
             if collection_name not in self.list_collections():
                 if not self.create_collection(collection_name):
                     self.error = True
                     self.error_message = f"Error creating collection '{collection_name}'."
+            print(f"Collection '{collection_name}' initialized successfully.")
         except Exception as e:
             self.error = True
             self.error_message = f"Error initializing Qdrant client: {e}"
 
     def list_collections(self):
         """List all existing collections in Qdrant."""
-        collections = self.client.get_collections()
-        return [collection.name for collection in collections.collections]
+        try:
+            # Get the list of collections
+            response = self.client.get_collections()
+
+            # Extract the names of the collections
+            return [collection.name for collection in response.collections]
+        except AttributeError:
+            raise ValueError("Unexpected response format from Qdrant API.")
+        except Exception as e:
+            # Error fetching collections
+            raise RuntimeError(f"Failed to list collections: {e}")
 
     def create_collection(self, collection_name: str):
         """Create a new collection in Qdrant."""
@@ -122,14 +134,12 @@ class QdrantVectorial:
     def generate_unique_id():
         return str(uuid.uuid4())
 
-    def insert_full_text(self, file_id: str, call_code: str, call_title: str, file_url: str, docs: list):
+    def insert_full_text(self, file_id: str, file_url: str, docs: list):
         """
         Inserts the full text of a document (e.g., a PDF) into a Qdrant collection.
 
         Args:
             file_id (str): Unique identifier for the file (used as the point ID).
-            call_code (str): Code of the related call for metadata.
-            call_title (str): Title of the related call for metadata.
             file_url (str): URL of the file for metadata.
             docs (list): List of document objects (e.g., PDF pages) for metadata.
 
@@ -149,8 +159,6 @@ class QdrantVectorial:
                     payload={
                         "content": doc.page_content,
                         "metadata": {
-                            "call_code": call_code,
-                            "call_title": call_title,
                             "file_id": file_id,
                             "file_url": file_url,
                             "page": i + 1,  # Número de fragmento o página
@@ -225,13 +233,13 @@ class QdrantVectorial:
             print(f"Error checking point existence: {e}")
             return False
 
-    def get_points(self, question: str, field_id: list, limit: int = 10):
+    def get_points(self, question: str, file_ids: list, limit: int = 10):
         """
         Get points from a Qdrant collection based on filter conditions.
 
         Args:
             question (str): Question to search for
-            field_id (list): List of field IDs to filter
+            file_ids (list): List of field IDs to filter
             limit (int): Maximum number of items to retrieve (default: 10).
 
         Returns:
@@ -244,7 +252,7 @@ class QdrantVectorial:
 		        {
                   "key": "metadata.file_id",
                   "match": {
-                    "any": field_id
+                    "any": file_ids
                     }
                 }
     	        ])

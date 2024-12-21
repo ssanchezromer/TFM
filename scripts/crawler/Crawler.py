@@ -1,6 +1,5 @@
 import requests
 
-
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
@@ -21,21 +20,23 @@ from QdrantVectorial import QdrantVectorial
 
 console = Console()
 
+
 class Crawler:
     # Description: Crawler class which is used to crawl a website with a given URL and extract all the content from it.
-    pages = ["fandit", "eu"]
+    typeCrawlers = ["FANDIT", "EUFUNDING"]
 
-    def __init__(self, page):
-        if page not in self.pages:
-            raise ValueError(f"URL not valid. URL must be one of the following: {self.pages}")
-        self.page = page
+    def __init__(self, typeCrawler):
+        if typeCrawler not in self.typeCrawlers:
+            raise ValueError(f"URL not valid. URL must be one of the following: {self.typeCrawlers}")
+        self.typeCrawler = typeCrawler
         self.url = None
         self.url_login = None
         self.html = None
         self.isLogged = False
         self.needsLogin = False
-        console.log(f"Initializing crawler {page} started", style="bold green")
-        with console.status(f"[bold green]Initializing crawler for {page}...[/bold green]", spinner="dots") as status:
+        console.log(f"Initializing crawler {typeCrawler} started", style="bold green")
+        with console.status(f"[bold green]Initializing crawler for {typeCrawler}...[/bold green]",
+                            spinner="dots") as status:
             status.update("[bold yellow]Initializing database...[/bold yellow]")
             self.db = Database()
             self.db.connect()
@@ -58,11 +59,11 @@ class Crawler:
             self.calls_delete = self.calls.copy()
             # initialize qdrant database
             status.update("[bold yellow]Initializing Qdrant...[/bold yellow]")
-            self.qdrant = QdrantVectorial(collection_name="pdf_collection")
+            self.qdrant = QdrantVectorial(host="host.docker.internal", collection_name="pdf_collection")
             # check if qdrant error
             if self.qdrant.error:
-                status.update("[bold red]Error initializing Qdrant[/bold red]")
-                exit("Error initializing Qdrant")
+                status.update(f"[bold red]Error initializing Qdrant. {self.qdrant.error_message}[/bold red]")
+                exit(f"Error initializing Qdrant. {self.qdrant.error_message}")
 
             status.update("[bold yellow]Initializing webdriver...[/bold yellow]")
             # INITIALIZATION
@@ -84,15 +85,15 @@ class Crawler:
             #chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
             # chrome_options.add_argument("--disable-notifications")
             # init driver
-            self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+            self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),
+                                           options=chrome_options)
             # self.driver = webdriver.Chrome(self.chrome_driver_path)
             # init colorama
             #print("init colorama")
             #init(autoreset=True)
             # check if MySQL database exists
             status.update("[bold green]Initialization complete[/bold green]")
-        console.log(f"Initialization crawler {page} completed", style="bold green")
-
+        console.log(f"Initialization crawler {typeCrawler} completed", style="bold green")
 
     def connect_database(self, database=""):
         """
@@ -176,28 +177,65 @@ class Crawler:
         """
         return soup.find("div", class_=class_name)
 
-
     def insert_full_text_from_links(self):
         """
         Insert full text from links
         :param force_update:
-        :return:
+        :return: result_array
         """
         # get all links from database
         links = self.db.get_links()
+        total_links = len(links)
+        links_exists = 0
+        links_ok = 0
+        links_ko = 0
         # get all links from database
         for link in links:
             # get link
             file_id = link[0]
-            # get call_code
-            call_code = link[1]
-            # get call_title
-            call_title = link[2]
             # get file_url
-            file_url = link[3]
+            file_url = link[1]
             # check if point exists (first page)
             point_id = int(f"{file_id:04}{1:04}")
             if not self.qdrant.point_exists(point_id):
                 docs = self.db.get_docs_from_pdf(file_url)
                 # insert full text
-                self.qdrant.insert_full_text(file_id, call_code, call_title, file_url, docs)
+                if self.qdrant.insert_full_text(file_id, file_url, docs):
+                    links_ok += 1
+                else:
+                    links_ko += 1
+            else:
+                links_exists +=1
+
+        return [total_links, links_exists, links_ok, links_ko]
+
+    @staticmethod
+    def date_formatting(date):
+        """
+        Date formatting from Ex. 16 September 2021
+        :param date: date
+        :return: formatted date (yyyy-mm-dd)
+        """
+        date_list = date.split(" ")
+        if len(date_list)==3:
+            day = date_list[0]
+            month = date_list[1]
+            year = date_list[2]
+            months = {
+                "January": "01",
+                "February": "02",
+                "March": "03",
+                "April": "04",
+                "May": "05",
+                "June": "06",
+                "July": "07",
+                "August": "08",
+                "September": "09",
+                "October": "10",
+                "November": "11",
+                "December": "12",
+            }
+            month_number = months[month]
+            return f"{year}-{month_number}-{day}"
+        else:
+            return None

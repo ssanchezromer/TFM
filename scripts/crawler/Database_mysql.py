@@ -9,8 +9,12 @@ from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain.chains.llm import LLMChain
 from langchain.schema import Document
+
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv(override=True)
 
@@ -31,58 +35,36 @@ class Llm:
         type_prompt = type_prompt.lower()
 
         if type_prompt == "summary":
-            prompt_template = """Write a long summary of the following document. 
-            Only include information that is part of the document. 
-            Do not include your own opinion or analysis.
+            prompt_template = """Write a detailed and exhaustive summary of the following document. 
+Ensure that all key details, including numbers, dates, and specific terminology, are accurately included. 
+Only include information that is part of the document. 
+Do not include your own opinion, analysis, or interpretation.
 
-            Document:
-            "{document}"
-            Summary:"""
+Document:
+"{document}"
+Summary:"""
         elif type_prompt == "type_company":
-            prompt_template = """You are an expert assistant in identifying the types of entities a text is directed to.
-             Classify the text into one or more of the following categories. 
-             If multiple categories apply, separate them with commas. 
-             Do not combine options into new categories.
+            prompt_template = """You are an expert assistant in classifying the target audience of a text. Categorize the text into one or more of the following options. If multiple categories apply, list them separated by commas. Do not create new categories or modify the existing ones.
 
-+ Company:
-  - Large Company
-  - Midcap
-  - SME
-  - Microenterprise
-  - Self-Employed
+Categories:
+- Company: Large Company, Midcap, SME, Microenterprise, Self-Employed
+- Organization: NGO, Technology Centers, Universities, Research Centers, Others
+- Particulars
 
-+ Organization:
-  - NGO
-  - Technology Centers
-  - Universities
-  - Research Centers
-  - Others
 
-+ Particulars:
+If the text cannot be classified or does not match any category, leave the response blank.
 
-If it is not possible to determine or if the text does not fit any category, leave the response empty (do not write anything).
-Provide only the classification as shown in the examples below. 
-
-Examples of Responses:
-
+Examples:
 - Company: SME
 - Organization: Technology Centers
-- Individual
+- Particulars
 - Company: SME, Organization: Universities
-
-Text to classify:
+Text:
 {text}
 
 Classification:"""
         else:
-            prompt_template = """Escribe un resumen largo del siguiente documento. 
-            El idioma del resumen debe ser el mismo del documento.
-                        Incluya únicamente información que forme parte del documento. 
-                        No incluyas tu propia opinión o análisis.
-
-                        Documento:
-                        "{document}"
-                        Resumen:"""
+            prompt_template = """"""
 
         return prompt_template
 
@@ -98,6 +80,12 @@ Classification:"""
                 temperature=temperature,
                 model_name=model_name,
                 api_key=api_key,
+                base_url=base_url,
+            )
+        elif chat == "ollama":
+            llm = ChatOllama(
+                temperature=temperature,
+                model=model_name,
                 base_url=base_url,
             )
         else:
@@ -140,6 +128,8 @@ class Database:
                                 "Company: Self-Employed", "Organization: NGO", "Organization: Technology Centers",
                                 "Organization: Universities", "Organization: Research Centers", "Organization: Others",
                                 "Particulars", ""]
+
+        self.connection = self.get_connection()
 
     def connect(self):
         """"
@@ -261,7 +251,7 @@ class Database:
             cursor = self.connection.cursor()
             cursor.execute(f"SHOW TABLES FROM {self.database}")
             tables = cursor.fetchall()
-            return len(tables) == 5
+            return len(tables) == 6
         except Exception as e:
             print("[bold red]Error checking tables:[/bold red]", f"{e}")
             return False
@@ -283,20 +273,24 @@ class Database:
         try:
             cursor = self.connection.cursor()
             # drop tables
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
             for table in self.table_names:
                 cursor.execute(f"DROP TABLE IF EXISTS {table}")
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
             self.connection.commit()
             time.sleep(1)
 
             # create tables for external sql file (tables.sql)
             cursor = self.connection.cursor()
             with open("tables.sql", "r") as file:
-                sql = file.read()
-                for _ in cursor.execute(sql, multi=True):
-                    pass
+                sql_commands = file.read().split(";")  # Split the file into commands
+
+                for command in sql_commands:
+                    if command.strip():  # Execute the command if it's not empty
+                        cursor.execute(command + ";")
 
             self.connection.commit()
-            time.sleep(1)
+            time.sleep(5)
             return True
         except Exception as e:
             print("[bold red]Error creating tables:[/bold red]", f"{e}")
@@ -312,10 +306,15 @@ class Database:
         """
         sql = ""
         try:
+            if call['next_deadline_date'] == "":
+                call['next_deadline_date'] = None
+            if call['opening_date'] == "":
+                call['opening_date'] = None
+
             # remove call from calls_delete
             for i in range(len(calls_delete)):
-                if calls_delete[i]['call_code'] == call['call_code'] and calls_delete[i]['call_title'] == call[
-                    'call_title']:
+                if (calls_delete[i]['call_code'] == call['call_code'] and
+                        calls_delete[i]['call_title'] == call['call_title']):
                     del calls_delete[i]
                     break
             self.connect_database()
@@ -330,25 +329,29 @@ class Database:
             if len(result) == 0:
                 sql = (
                     "INSERT INTO calls_basic_information "
-                    "(call_code, call_title, call_href, call_type, "
-                    "opening_date, next_deadline, deadline_model, status, programme, "
-                    "type_of_action, budget_total, location) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                    "(call_code, call_title, call_href, funding_mechanism, "
+                    "opening_date, next_deadline_date, submission_type, call_state, programme, "
+                    "type_of_action, budget_total, eligibility_region, extra_information) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
                 val = (
-                    call['call_code'], call['call_title'], call['call_href'], call['call_type'], call['opening_date'],
-                    call['next_deadline'], call['deadline_model'], call['status'], call['programme'],
-                    call['type_of_action'], call['budget_total'], call['location'])
+                    call['call_code'], call['call_title'], call['call_href'], call['funding_mechanism'], call['opening_date'],
+                    call['next_deadline_date'], call['submission_type'], call['call_state'], call['programme'],
+                    call['type_of_action'], call['budget_total'], call['eligibility_region'], call['extra_information'])
             else:
+                # print(f"Actualizamos con extra information: {call['extra_information']}")
                 # update
                 sql = (
-                    "UPDATE calls_basic_information SET call_href = %s, call_type = %s, opening_date = %s, next_deadline = %s, deadline_model = %s, status = %s, programme = %s, type_of_action = %s, budget_total = %s, location = %s WHERE call_code = %s and call_title = %s")
-                val = (call['call_href'], call['call_type'], call['opening_date'], call['next_deadline'],
-                       call['deadline_model'], call['status'], call['programme'], call['type_of_action'],
-                       call['budget_total'], call['location'], call['call_code'], call['call_title'])
+                    "UPDATE calls_basic_information SET call_href = %s, funding_mechanism = %s, opening_date = %s,"
+                    " next_deadline_date = %s, submission_type = %s, call_state = %s, programme = %s, type_of_action = %s,"
+                    " budget_total = %s, eligibility_region = %s, extra_information = %s WHERE call_code = %s and call_title = %s")
+                val = (call['call_href'], call['funding_mechanism'], call['opening_date'], call['next_deadline_date'],
+                       call['submission_type'], call['call_state'], call['programme'], call['type_of_action'],
+                       call['budget_total'], call['eligibility_region'], call['extra_information'],
+                       call['call_code'], call['call_title'])
 
-            # Ejecuta la inserción o actualización
+            # Execute the insertion or update
             cursor.execute(sql, val)
-            self.connection.commit()  # Haz commit después de la inserción/actualización
+            self.connection.commit()  # Commit after the insertion/update
 
             # check if exists in calls_description_information
             cursor.execute("SELECT * FROM calls_description_information WHERE call_code = %s AND call_title = %s",
@@ -357,7 +360,9 @@ class Database:
 
             if len(result) == 0:
                 sql = (
-                    "INSERT INTO calls_description_information (call_code, call_title, topic_description, topic_destination, topic_conditions_and_documents, budget_overview, partner_search_announcements, start_submission, get_support, extra_information) "
+                    "INSERT INTO calls_description_information (call_code, call_title, topic_description,"
+                    " topic_destination, topic_conditions_and_documents, budget_overview,"
+                    " partner_search_announcements, start_submission, get_support, extra_information) "
                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
                 val = (call['call_code'], call['call_title'], call['topic_description'], call['topic_destination'],
                        call['topic_conditions_and_documents'], call['budget_overview'],
@@ -365,15 +370,18 @@ class Database:
                        call['extra_information'])
             else:
                 # update
-                sql = "UPDATE calls_description_information SET topic_description = %s, topic_destination = %s, topic_conditions_and_documents = %s, budget_overview = %s, partner_search_announcements = %s, start_submission = %s, get_support = %s, extra_information = %s WHERE call_code = %s and call_title = %s"
+                sql = ("UPDATE calls_description_information SET topic_description = %s, topic_destination = %s,"
+                       " topic_conditions_and_documents = %s, budget_overview = %s, partner_search_announcements = %s,"
+                       " start_submission = %s, get_support = %s, extra_information = %s "
+                       "WHERE call_code = %s and call_title = %s")
                 val = (call['topic_description'], call['topic_destination'], call['topic_conditions_and_documents'],
                        call['budget_overview'], call['partner_search_announcements'], call['start_submission'],
                        call['get_support'], call['extra_information'], call['call_code'], call['call_title'])
 
-            # Ejecuta la inserción o actualización
+            # Execute the insertion or update
             cursor.execute(sql, val)
-            self.connection.commit()  # Haz commit después de la inserción/actualización
-            cursor.close()  # Cierra el cursor
+            self.connection.commit()  # Commit after the insertion/update
+            cursor.close()
 
             # check if exists in calls_budget_information
             cursor = self.get_cursor()
@@ -398,14 +406,20 @@ class Database:
                     budget_indicative_number_of_grants = call_budget_indicative_number_of_grants_list[i]
                     if len(result) == 0:
                         sql = (
-                            "INSERT INTO calls_budget_information (call_code, call_title, budget_topic, budget_amount, budget_stages, budget_opening_date, budget_deadline, budget_contributions, budget_indicative_number_of_grants) "
+                            "INSERT INTO calls_budget_information ("
+                            "call_code, call_title, budget_topic, budget_amount, budget_stages, "
+                            "budget_opening_date, budget_deadline, budget_contributions, "
+                            "budget_indicative_number_of_grants) "
                             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
                         val = (call['call_code'], call['call_title'], budget_topic, budget_amount, budget_stages,
                                budget_opening_date, budget_deadline, budget_contributions,
                                budget_indicative_number_of_grants)
                     else:
                         # update
-                        sql = "UPDATE calls_budget_information SET budget_amount = %s, budget_stages = %s, budget_opening_date = %s, budget_deadline = %s, budget_contributions = %s, budget_indicative_number_of_grants = %s WHERE call_code = %s and call_title = %s and budget_topic = %s"
+                        sql = ("UPDATE calls_budget_information SET budget_amount = %s, budget_stages = %s, "
+                               "budget_opening_date = %s, budget_deadline = %s, budget_contributions = %s, "
+                               "budget_indicative_number_of_grants = %s "
+                               "WHERE call_code = %s and call_title = %s and budget_topic = %s")
                         val = (budget_amount, budget_stages, budget_opening_date, budget_deadline, budget_contributions,
                                budget_indicative_number_of_grants, call['call_code'], call['call_title'], budget_topic)
 
@@ -436,7 +450,8 @@ class Database:
                 self.connection.commit()
 
                 # check if exists in calls_urls
-                sql = "SELECT * FROM calls_urls WHERE call_code = %s AND call_title = %s AND file_id = %s AND file_title = %s"
+                sql = ("SELECT * FROM calls_urls "
+                       "WHERE call_code = %s AND call_title = %s AND file_id = %s AND file_title = %s")
                 cursor.execute(sql, (call_code, call_title, file_id, file_title))
                 result = self.fetch_all(cursor)
                 if len(result) == 0:
@@ -453,7 +468,7 @@ class Database:
 
         except Exception as e:
             print("[bold red]Error saving call to database:[/bold red]", f"{e}")
-            print(f"SQL: {sql}")
+            print(f"SQL: {sql}, Val: {val}")
             print(f"Call url: {call['call_href']}")
             return False
 
@@ -468,7 +483,7 @@ class Database:
                 call = calls_delete[i]
                 cursor = self.get_cursor()
                 cursor.execute(
-                    "UPDATE calls_basic_information SET status = %s WHERE call_code = %s AND call_title = %s",
+                    "UPDATE calls_basic_information SET call_state = %s WHERE call_code = %s AND call_title = %s",
                     ("Closed", call['call_code'], call['call_title']))
                 self.connection.commit()
                 j += 1
@@ -524,33 +539,65 @@ class Database:
             else:
                 mysql_uri = f'mysql+mysqlconnector://{self.user}@{self.host}:{self.port}/{self.database}'
 
-            print(f"[INFO] Conectando a la base de datos con la URI: {mysql_uri}")
+            print(f"[INFO] Connecting to the database with URI: {mysql_uri}")
 
             dbschema = SQLDatabase.from_uri(mysql_uri)
-            # Verificar si dbschema tiene un valor
+            # check if dbschema has data
             if dbschema:
-                print("[INFO] Conexión exitosa.")
+                print("[INFO] Connected successfully to the database.")
                 return dbschema.get_table_info()
             else:
-                print("[ERROR] dbschema no contiene datos.")
+                print("[ERROR] dbschema does not have data.")
                 return None
         except Exception as e:
             print("Error getting schema:", f"{e}")
             return None
 
-    def get_call_codes(self, location):
+    def get_call_codes(self, eligibility_region):
         """
         Get call codes from database
-        :param location: location
+        :param eligibility_region: eligibility_region
         :return: call_codes
         """
-        # get call_code from calls_basic_information table
-        sql = "SELECT call_code, call_title FROM calls_basic_information WHERE location = %s"
-        cursor = self.get_cursor()
-        cursor.execute(sql, (location,))
-        call_codes = cursor.fetchall() if cursor.rowcount > 0 else []
+        cursor = None
+        conn = None
+        try:
+            # Consulta para obtener los call_code y call_title
+            sql = "SELECT call_code, call_title FROM calls_basic_information WHERE eligibility_region = %s"
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute(sql, (eligibility_region,))
+            call_codes = cursor.fetchall()  # Get all the results
+        except Exception as e:
+            print(f"Error getting call codes from database: {e}")
+            call_codes = []
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
         return [(row[0], row[1]) for row in call_codes]
+
+    @staticmethod
+    def calculate_similarity(text, summary):
+        """
+        Calculate similarity
+        :param text: text
+        :param summary: summary
+        :return: similarity
+        """
+        # Load embeddings model
+        model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+        # Get embeddings
+        embedding_text = model.encode(text).reshape(1, -1)
+        embedding_summary = model.encode(summary).reshape(1, -1)
+        # Calculate cosine similarity
+        similarity = cosine_similarity(embedding_text, embedding_summary)[0][0]
+        similarity = float(similarity)  # Convert to Python float
+
+        return similarity
 
     def get_text_summary_from_link(self, link):
         """
@@ -558,12 +605,14 @@ class Database:
         :param link: link
         """
         file_url = link[0]
-        conn = None  # Inicializar conn aquí para evitar errores
+        conn = None
+        cursor = None
         try:
             # get text from url
             file_text = self.get_text_from_url(file_url)
             # get summary from url
             file_summary = self.get_summary_from_url(file_url)
+            file_similarity = self.calculate_similarity(file_text, file_summary)
             file_error_description = ""
             file_error_code = ""
             if file_text == "":
@@ -573,27 +622,26 @@ class Database:
                     print(f"Error getting text from link {file_url}: {file_error_description}")
                     print(f"Error code: {file_error_code}")
 
-            # Actualizar la base de datos
+            # Update database
             sql = ("UPDATE calls_files_information SET file_text = %s, file_summary = %s, "
-                   "file_error_description = %s, file_error_code = %s WHERE file_url = %s")
+                   "file_similarity = %s, file_error_description = %s, file_error_code = %s "
+                   "WHERE file_url = %s")
 
-            # Conectar a la base de datos
+            # Connect to the database
             conn = self.get_connection()
-
-            with conn.cursor() as cursor:
-                cursor.execute(sql,
-                               (file_text, file_summary, file_error_description, file_error_code, file_url))
-                conn.commit()
-
-            # with self.get_connection() as conn:
-            #     cursor = conn.cursor()
-            #     cursor.execute(sql, (file_text, file_summary, file_error_description, file_error_code, file_url))
-            #     conn.commit()
+            cursor = conn.cursor()
+            cursor.execute(sql,
+                           (file_text.strip(), file_summary, file_similarity,
+                            file_error_description, file_error_code, file_url))
+            conn.commit()
 
         except Exception as e:
             print(f"Error getting text and summary from link {file_url}: {e}")
-
+            if conn:
+                conn.rollback()  # Rollback in case of error
         finally:
+            if cursor:
+                cursor.close()
             if conn:
                 conn.close()
 
@@ -618,25 +666,26 @@ class Database:
         if text == "" and topic_conditions_and_documents != "":
             text = f"TOPIC CONDITIONS AND DOCUMENTS:\n{topic_conditions_and_documents}"
 
-        conn = None  # Inicializar conn aquí para evitar errores
+        conn = None
+        cursor = None
         try:
             # get type of company from text
             type_company = self.get_type_company_from_text(text)
             sql = ("UPDATE calls_basic_information SET type_company = %s WHERE call_code = %s "
                    "AND call_title = %s")
-            # Conectar a la base de datos
+            # Connect to the database
             conn = self.get_connection()
-
-            with conn.cursor() as cursor:
-                # update database
-
-                cursor.execute(sql, (type_company, call_code, call_title))
-                conn.commit()
+            cursor = conn.cursor()
+            cursor.execute(sql, (type_company, call_code, call_title))
+            conn.commit()
 
         except Exception as e:
             print(f"Error getting type of company from description {call_code}: {call_title}: {e}")
-
+            if conn:
+                conn.rollback()  # Rollback in case of error
         finally:
+            if cursor:
+                cursor.close()
             if conn:
                 conn.close()
 
@@ -714,19 +763,27 @@ class Database:
         summary = ""
         if docs:
             try:
-                prompt_template = """Write a long and exhaustive summary of the document. 
-                            Only include information that is part of the document. 
-                            Do not include your own opinion or analysis.
+                prompt_template = """Write a detailed and exhaustive summary of the following document. 
+Ensure that all key details, including numbers, dates, and specific terminology, are accurately included. 
+Only include information that is part of the document. 
+Do not include your own opinion, analysis, or interpretation.
         
                             Document:
                             "{document}"
                             Summary:"""
                 prompt = PromptTemplate.from_template(prompt_template)
-                llm = ChatOpenAI(
+                # llm = ChatOpenAI(
+                #     temperature=0.1,
+                #     model_name=os.getenv('OLLAMA_MODEL_SUMMARIZE'),
+                #     api_key="ollama",
+                #     base_url="http://host.docker.internal:11434/v1",
+                #     max_tokens=None,
+                #
+                # )
+                llm = ChatOllama(
                     temperature=0.1,
-                    model_name="llama3.2:1b-instruct-q3_K_L",
-                    api_key="ollama",
-                    base_url="http://host.docker.internal:11434/v1",
+                    model=os.getenv('OLLAMA_MODEL_SUMMARIZE'),
+                    base_url=os.getenv('OLLAMA_BASE_URL')
                 )
                 stuff_chain = prompt | llm
                 input_data = {"document": docs}
@@ -750,15 +807,21 @@ class Database:
             while tries > 0 and not any(company.strip() in self.types_companies for company in type_company.split(',')):
                 prompt_template = self.Llm.get_prompt(type_prompt="type_company")
                 prompt = PromptTemplate.from_template(prompt_template)
-                llm = ChatOpenAI(
+                # llm = ChatOpenAI(
+                #     temperature=0.1,
+                #     model_name="llama3.2:1b-instruct-q3_K_L",
+                #     api_key="ollama",
+                #     base_url="http://host.docker.internal:11434/v1",
+                # )
+                llm = ChatOllama(
                     temperature=0.1,
-                    model_name="llama3.2:1b-instruct-q3_K_L",
-                    api_key="ollama",
-                    base_url="http://host.docker.internal:11434/v1",
+                    model=os.getenv('OLLAMA_MODEL_TYPE_COMPANY'),
+                    base_url=os.getenv('OLLAMA_BASE_URL'),
+                    # num_ctx=2048
                 )
                 # stuff_chain = create_stuff_documents_chain(llm=llm, prompt=prompt, document_variable_name="text")
                 stuff_chain = prompt | llm
-                # Crear un objeto Document con el texto y metadatos opcionales
+                # Create document from text
                 document = Document(page_content=text)
                 documents = [document]
                 # Create dict with the document key
@@ -803,13 +866,14 @@ class Database:
         """
         try:
             loader = PyPDFLoader(url)
-            # response = requests.get(url, timeout=10)
-            # response.raise_for_status()  # Verifica si la respuesta es correcta
-            # pdf_file = BytesIO(response.content)
-            # loader = PyPDFLoader(pdf_file)
             docs = loader.load()
-        except Exception:
+            if not docs:
+                print(f"Error getting docs from pdf {url}")
+        except Exception as e:
+            print(f"Error getting docs from pdf {url}")
+            print(f"Error: {e}")
             docs = []
+
         return docs
 
     @staticmethod
@@ -819,7 +883,11 @@ class Database:
         :param docs: docs
         :return: text
         """
-        return "\n\n".join([doc.page_content for doc in docs])
+        if not docs:
+            return "No docs in pdf"
+        content = "\n\n".join([doc.page_content for doc in docs])
+        # trip content
+        return content.strip()
 
     def get_links(self):
         """
@@ -827,11 +895,82 @@ class Database:
         :return: links
         """
         cursor = self.get_cursor()
-        cursor.execute("SELECT "
-                       "a.id, b.call_code, b.call_title, a.file_url "
-                       "FROM calls_files_information AS a INNER JOIN calls_urls AS b "
-                       "ON a.id = b.file_id "
-                       "WHERE a.file_text != '' AND a.file_error_code = '' "
-                       "GROUP BY b.file_id"
-                       )
+
+        sql = """SELECT 
+                    MIN(a.id) AS id, 
+                    b.call_code, 
+                    b.call_title, 
+                    MIN(a.file_url) AS file_url
+                FROM 
+                    calls_files_information AS a 
+                INNER JOIN 
+                    calls_urls AS b 
+                ON 
+                    a.id = b.file_id 
+                WHERE 
+                    a.file_text != '' 
+                    AND a.file_error_code = '' 
+                GROUP BY 
+                    b.call_code, b.call_title;"""
+
+        sql = """SELECT 
+                a.id, b.call_code, b.call_title, a.file_url 
+                FROM calls_files_information AS a INNER JOIN calls_urls AS b 
+                ON a.id = b.file_id 
+                WHERE a.file_text != '' AND a.file_error_code = '' 
+                GROUP BY b.file_id"""
+
+        sql = """
+        SELECT a.id, a.file_url FROM calls_files_information as a WHERE a.file_text!='' AND a.file_error_code=''
+        """
+        cursor.execute(sql)
         return self.fetch_all(cursor)
+
+    def logging_crawling(self, crawler_name, status, root_id=0, message=""):
+        """
+        Logging crawling
+        :param crawler_name: crawler_name
+        :param status: status
+        :param root_id: root_id
+        :param message: message
+        :return: log_id
+        """
+        log_id = None
+        conn = None
+        cursor = None
+        try:
+            status_list = os.getenv("STATUS_LIST").split(",")
+            if status not in status_list:
+                message = f"Status {status} not in {status_list}"
+                status = 'ERROR'
+
+            # Get the connection & cursor
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # Insert the log
+            sql_query = """
+                    INSERT INTO calls_logs (root_id, crawler_name, created_at, status, message) 
+                    VALUES (%s, %s, NOW(), %s, %s)
+                """
+            cursor.execute(sql_query, (root_id, crawler_name, status, message))
+
+            # Realiza el commit de la transacción
+            conn.commit()
+
+            # Obtiene el ID del último registro insertado
+            cursor.execute("SELECT LAST_INSERT_ID()")
+            log_id = cursor.fetchone()[0]
+
+        except Exception as e:
+            print(f"Error logging crawling: {e}")
+            if conn:
+                conn.rollback()  # En caso de error, realiza un rollback
+        finally:
+            # Cierra el cursor y la conexión
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+        return log_id

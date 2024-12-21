@@ -45,12 +45,12 @@ def get_points():
     try:
         data = request.json
         question = data.get('question', '')
-        field_id = data.get('field_id', [])
+        file_ids = data.get('file_ids', [])
         limit = data.get('limit', 4)
         points = []
 
         q = QdrantVectorial(host="host.docker.internal", port=6333)
-        points = q.get_points(question, field_id, limit)
+        points = q.get_points(question, file_ids, limit)
 
         content = ""
         links = ""
@@ -59,8 +59,10 @@ def get_points():
             json_data = point.payload
             score = point.score
             content += f"\n{json_data['content']}"
-            # contruct html of links with pages
-            links += f"\n<a href='{json_data['metadata']['file_url']}'>{json_data['metadata']['call_code']} - {json_data['metadata']['call_title']}</a> - Page: {json_data['metadata']['page']} - Score: {score}"
+            page = json_data['metadata']['page']
+            file_url = json_data['metadata']['file_url']
+            # construct html of links with pages
+            links += f"\n<a href='{file_url}'>{file_url}</a> - Page: {page} - Score: {score}"
 
         if links:
             links = f"<h3>Links with pages</h3>{links}"

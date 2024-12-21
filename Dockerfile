@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y wget unzip \
     && CHROMEDRIVER_VERSION=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${GOOGLE_CHROME_VERSION}) \
     && wget -q https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip \
     && unzip chromedriver-linux64.zip -d /usr/local/bin \
-    && ln -s /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+    && ln -s /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     && rm chromedriver-linux64.zip
 
 # Verify ChromeDriver installation

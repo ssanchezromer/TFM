@@ -1,11 +1,19 @@
 from EUFunding import EUFunding
 # from Fandit_7experts import Fandit
 import time
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", message=".*?Old MapAsync APIs are deprecated.*?")
 
 start_time = time.time()
 eu = EUFunding()
 # --------
-# eu.start_crawling(force_update=False)
+eu.start_crawling(force_update=False)
+# eu.get_text_and_summary_from_links(force_update=False)
+# eu.get_type_company_from_descriptions(force_update=False)
+# eu.insert_full_text_from_links()
 # --------
 # calculate time to make all the process in minutes and seconds
 elapsed_time = time.time() - start_time

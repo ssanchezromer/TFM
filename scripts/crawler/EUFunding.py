@@ -1,6 +1,5 @@
 import csv
 from concurrent.futures.thread import ThreadPoolExecutor
-from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import as_completed
 from Crawler import Crawler
 import time
@@ -36,7 +35,7 @@ progress_bar = Progress(
 
 class EUFunding(Crawler):
     def __init__(self):
-        super().__init__("eu")
+        super().__init__("EUFUNDING")
         self.page = 1
         self.page_all = 0
         self.is_open = True
@@ -47,116 +46,142 @@ class EUFunding(Crawler):
         # get first page url
         self.url = self.get_url()
         self.soup = None
-        self.location = "Europe"
+        self.eligibility_region = "Europe"
         self.currency = "EUR"
 
     def start_crawling(self, force_update=False):
         """
         Start crawling
         """
-        console.log("Starting crawling...", style="bold green")
-        with console.status("[bold green]Starting crawling...[/bold green]") as status:
-            self.get_page_source(self.url)  # initialize page source with first page (default)
-            # accept cookies, only once?
-            status.update("[bold yellow]Accepting cookies...[/bold yellow]")
-            self.accept_cookies()
-            # get all existing call_code, call_title in database
-            call_codes = self.db.get_call_codes(self.location)
-            # get soup
-            soup = self.get_soup()
-            # get number of items found (total)
-            status.update("[bold yellow]Getting items...[/bold yellow]")
-            items_found = self.get_items(soup)
-            print(f"\nEu funding has {items_found} calls")
-            current_page = self.get_current_page(soup)
-            status.update(f"[bold yellow]Getting calls from page {current_page}[/bold yellow]")
-            # Get all calls from the page
-            calls = self.get_calls(soup)
+        log_id = None
+        try:
+            console.log("Starting crawling...", style="bold green")
+            log_id = self.db.logging_crawling(self.typeCrawler, "STARTED")
+            with console.status("[bold green]Starting crawling...[/bold green]") as status:
+                self.get_page_source(self.url)  # initialize page source with first page (default)
+                # accept cookies, only once?
+                status.update("[bold yellow]Accepting cookies...[/bold yellow]")
+                self.accept_cookies()
+                # get all existing call_code, call_title in database
+                call_codes = self.db.get_call_codes(self.eligibility_region)
+                # get soup
+                soup = self.get_soup()
+                # get number of items found (total)
+                status.update("[bold yellow]Getting items...[/bold yellow]")
+                items_found = self.get_items(soup)
+                print(f"\nEu funding has {items_found} calls")
+                self.db.logging_crawling(self.typeCrawler, "WEB CRAWL",
+                                         message=f"Total calls: {items_found}", root_id=log_id)
+                current_page = self.get_current_page(soup)
+                status.update(f"[bold yellow]Getting calls from page {current_page}[/bold yellow]")
+                # Get all calls from the page
+                calls = self.get_calls(soup)
 
-            # Get number of calls in the page
-            len_calls = len(calls)
-            i = 0
-            call_fields = []
-            if len_calls > 0:
-                while True:
-                    # execute in parallel
-                    with ThreadPoolExecutor(max_workers=5) as executor:
-                        # Utilizamos map para aplicar `get_call_fields` a cada elemento de `calls`
-                        call_fields_page = list(executor.map(self.get_call_fields, calls))
+                # Get number of calls in the page
+                len_calls = len(calls)
+                i = 0
+                call_fields = []
+                if len_calls > 0:
+                    while True:
+                        # execute in parallel
+                        with ThreadPoolExecutor(max_workers=5) as executor:
+                            # Use map to apply `get_call_fields` to each element of `calls`
+                            call_fields_page = list(executor.map(self.get_call_fields, calls))
 
-                    i += len(call_fields_page)
-                    call_fields.extend(call_fields_page)
-                    # if more items found than i, go to next page
-                    if int(items_found) > i:
-                        # go to next page
-                        self.go_next_page()
-                        # Get new page source
-                        soup = self.get_soup()
-                        # get current page
-                        current_page = self.get_current_page(soup)
-                        status.update(f"[bold yellow]Getting calls from page {current_page}[/bold yellow]")
-                        # get calls from the page
-                        calls = self.get_calls(soup)
-                        # get number of calls in the page
-                        items_found = self.get_items(soup)
-                    else:
-                        # out of while loop
-                        break
-                time.sleep(1)
-                print(f"\nProcessed {i} calls")
+                        i += len(call_fields_page)
+                        call_fields.extend(call_fields_page)
+                        # if more items found than i, go to next page
+                        if int(items_found) > i:
+                            # go to next page
+                            self.go_next_page()
+                            # Get new page source
+                            soup = self.get_soup()
+                            # get current page
+                            current_page = self.get_current_page(soup)
+                            status.update(f"[bold yellow]Getting calls from page {current_page}[/bold yellow]")
+                            # get calls from the page
+                            calls = self.get_calls(soup)
+                            # get number of calls in the page
+                            items_found = self.get_items(soup)
+                        else:
+                            # out of while loop
+                            break
+                    time.sleep(1)
+                    print(f"\nProcessed {i} calls")
 
-        # At the end get extended fields from each call
-        console.log("Getting extended information...", style="bold green")
-        status_name_list = ()
-        # get all status name list
-        for i, call in enumerate(call_fields):
-            call_code = call['call_code']
-            status_name = f"Getting extended fields for call code ({i + 1}/{len(call_fields)}): {call_code}"
-            status_name_list += (status_name,)
-
-        with progress_bar as p:
-            for call_num in p.track(range(len(call_fields))):
-                call = call_fields[call_num]
+            # At the end get extended fields from each call
+            console.log("Getting extended information...", style="bold green")
+            self.db.logging_crawling(self.typeCrawler, "WEB CRAWL EXTENDED", root_id=log_id)
+            status_name_list = ()
+            # get all status name list
+            for i, call in enumerate(call_fields):
                 call_code = call['call_code']
-                call_title = call['call_title']
+                status_name = f"Getting extended fields for call code ({i + 1}/{len(call_fields)}): {call_code}"
+                status_name_list += (status_name,)
 
-                if not (call_code, call_title) in call_codes or force_update:
-                    fields_extended, links = self.get_call_fields_extended(call)
-                    # added fields to call
-                    call.update(fields_extended)
-                    # save call to database
-                    self.db.save_call_database(call, links, self.calls_delete)
+            with progress_bar as p:
+                for call_num in p.track(range(len(call_fields))):
+                    call = call_fields[call_num]
+                    call_code = call['call_code']
+                    call_title = call['call_title']
 
-        print(f"\nProcessed {i} calls in {current_page} pages")
-        # Cierra el navegador al finalizar
-        status.update("[bold yellow]Closing browser...[/bold yellow]")
-        self.driver.quit()
-        print("\nDriver closed!")
-        console.log("Closing not existing calls", style="bold green")
-        number_calls_removed = self.db.remove_call_delete(self.calls_delete)
-        print(f"\nClosed {number_calls_removed} calls")
-        console.log("Start NLP links summary", style="bold green")
-        self.get_text_and_summary_from_links(force_update)
+                    if (call_code, call_title) not in call_codes or force_update:
+                        fields_extended, links = self.get_call_fields_extended(call)
+                        if fields_extended["extra_information"].strip() == "":
+                            print(f"Extra information empty for call code: {fields_extended['call_code']},"
+                                  f" call url: {fields_extended['call_href']}")
+                            exit()
+                        # added fields to call
+                        call.update(fields_extended)
+                        # save call to database
+                        self.db.save_call_database(call, links, self.calls_delete)
 
-        console.log("Start NLP type_company", style="bold green")
-        self.get_type_company_from_descriptions(force_update)
+            print(f"\nProcessed {i} calls in {current_page} pages")
+            # Cierra el navegador al finalizar
+            status.update("[bold yellow]Closing browser...[/bold yellow]")
+            self.driver.quit()
+            print("\nDriver closed!")
+            console.log("Closing not existing calls", style="bold green")
+            number_calls_removed = self.db.remove_call_delete(self.calls_delete)
+            self.db.logging_crawling(self.typeCrawler, "CLOSING CALLS",
+                                     message=f"Calls closed: {number_calls_removed}",
+                                     root_id=log_id)
 
-        console.log("Start vectorial database (PDF)", style="bold green")
-        self.insert_full_text_from_links()
+            console.log("Start NLP links summary", style="bold green")
 
-        console.log("Crawling finished!", style="bold green")
-        # print call_fields
-        print(f"Call fields length: {len(call_fields)}")
+            self.get_text_and_summary_from_links(force_update)
+            self.db.logging_crawling(self.typeCrawler, "NLP SUMMARY",
+                                     message=f"Calls summarized: {len(call_fields)}",
+                                     root_id=log_id)
+
+            console.log("Start NLP type_company", style="bold green")
+            self.get_type_company_from_descriptions(force_update)
+            self.db.logging_crawling(self.typeCrawler, "NLP TYPE COMPANY", root_id=log_id)
+
+            console.log("Start vectorial database (PDF)", style="bold green")
+            total_links, links_exists, links_ok, links_ko = self.insert_full_text_from_links()
+            self.db.logging_crawling(self.typeCrawler, "DB VECTORIAL",
+                                     root_id=log_id,
+                                     message=f"Total links: {total_links}, Links exists: {links_exists}, Links ok: {links_ok}, Links ko: {links_ko}")
+
+            console.log("Crawling finished!", style="bold green")
+            self.db.logging_crawling(self.typeCrawler, "FINISHED")
+        except Exception as e:
+            print(f"\nError: {e}")
+            self.db.logging_crawling(self.typeCrawler, "ERROR", message=f"Error: {e}", root_id=log_id)
 
     def get_text_and_summary_from_links(self, force_update=False):
         """
         Get text and summary from calls files table
+        :param force_update: force update
+        :return: none
         """
         # get all links from database
         if force_update:
             sql = "SELECT DISTINCT(file_url) FROM calls_files_information"
         else:
-            sql = "SELECT DISTINCT(file_url) FROM calls_files_information WHERE file_text = '' OR file_summary = '' AND file_error_code = '' AND file_error_description = ''"
+            sql = ("SELECT DISTINCT(file_url) FROM calls_files_information "
+                   "WHERE file_text = '' OR file_summary = '' AND file_error_code = '' AND file_error_description = ''")
         cursor = self.db.get_cursor()
         cursor.execute(sql)
         links = cursor.fetchall()
@@ -164,7 +189,6 @@ class EUFunding(Crawler):
         num_links = len(links)
         print(f"\nExtracting text and summary from {num_links} links...")
         # parallel processing
-        # Iniciar la barra de progreso de rich
         with Progress(
                 TextColumn("[bold blue]{task.fields[link_id]}[/bold blue]", justify="right"),
                 BarColumn(),
@@ -174,21 +198,13 @@ class EUFunding(Crawler):
                 TimeRemainingColumn(),
         ) as progress:
             task_id = progress.add_task("Processing Links", link_id="", total=num_links)
-            with ThreadPoolExecutor(max_workers=4) as pool:
-                # Utilizamos map para aplicar `get_call_fields` a cada elemento de `calls`
+            with ThreadPoolExecutor(max_workers=1) as pool:
                 futures = {pool.submit(self.db.get_text_summary_from_link, link): link for link in links}
                 for future in as_completed(futures):
                     link = futures[future]
-                    # Tiempo de inicio
                     link_id = f"{link[0]}"
                     # progress.update(task_id=call_url_id, advance=1)
                     progress.update(task_id, advance=1, link_id=link_id)
-                    # try:
-                    #     result = future.result()  # Esto lanza cualquier excepción de los hilos
-                    # except Exception as e:
-                    #     print(f"Error al procesar el enlace {futures[future]}: {e}")
-                    #     # Manejo de errores adecuado
-                    # progress.update(task_id, advance=1, link_id=f"{futures[future][0]}")
 
         print("\nFinished extracting text and summary from links")
 
@@ -198,9 +214,14 @@ class EUFunding(Crawler):
         """
         # get all links from database
         if force_update:
-            sql = "SELECT call_code, call_title, topic_description, topic_destination, topic_conditions_and_documents, extra_information FROM calls_description_information"
+            sql = ("SELECT call_code, call_title, topic_description, topic_destination, "
+                   "topic_conditions_and_documents, extra_information FROM calls_description_information")
         else:
-            sql = "SELECT a.call_code, a.call_title, a.topic_description, a.topic_destination, a.topic_conditions_and_documents, a.extra_information FROM calls_description_information as a, calls_basic_information as b WHERE b.type_company IS NULL AND a.call_code = b.call_code AND a.call_title = b.call_title"
+            sql = ("SELECT a.call_code, a.call_title, a.topic_description, a.topic_destination, "
+                   "a.topic_conditions_and_documents, a.extra_information "
+                   "FROM calls_description_information as a INNER JOIN calls_basic_information as b "
+                   "ON (b.type_company IS NULL OR b.type_company = '') AND a.call_code = b.call_code AND "
+                   "a.call_title = b.call_title")
         cursor = self.db.get_cursor()
         cursor.execute(sql)
         descriptions = cursor.fetchall()
@@ -218,7 +239,7 @@ class EUFunding(Crawler):
                 TimeRemainingColumn(),
         ) as progress:
             task_id = progress.add_task("Processing Descriptions", link_id="", total=num_descriptions)
-            with ThreadPoolExecutor(max_workers=4) as pool:
+            with ThreadPoolExecutor(max_workers=1) as pool:
                 # Utilizamos map para aplicar `get_call_fields` a cada elemento de `calls`
                 futures = {pool.submit(self.db.get_type_company_from_description, description): description for
                            description in descriptions}
@@ -264,7 +285,7 @@ class EUFunding(Crawler):
             accept_cookies_button.click()  # Click on "Accept all cookies"
             #time.sleep(2)  # Wait a moment to make sure the banner closes
         except Exception as e:
-            print(f"\nCookie banner not found or already accepted: {e}")
+            print(f"\nCookie banner not found or already accepted:\n{e}")
 
     def get_items(self, soup):
         """
@@ -366,30 +387,32 @@ class EUFunding(Crawler):
         spans = first_card_content.find_all("span")
         # get first span text = call_code
         call_code = spans[0].text
-        # get third span text = call_type
-        call_type = spans[2].text
+        # get third span text = funding_mechanism
+        funding_mechanism = spans[2].text
         # get second card content
         second_card_content = card_contents[1]
         # there are 2 elements strong inside second_card_content
         # get first strong element text = opening_date
         elements_strong = second_card_content.find_all("strong")
         opening_date = elements_strong[0].text
+        opening_date = self.date_formatting(opening_date)
         # get second strong element text = next_deadline
-        next_deadline = ""
+        next_deadline_date = ""
         if len(elements_strong) > 1:
-            next_deadline = elements_strong[1].text
+            next_deadline_date = elements_strong[1].text
+            next_deadline_date = self.date_formatting(next_deadline_date)
         # also there are 3 span elements inside second_card_content
         elements_span = second_card_content.find_all("span")
-        # get third span element text = deadline_model
-        deadline_model = ""
+        # get third span element text = submission_type
+        submission_type = ""
         if len(elements_span) > 2:
-            deadline_model = elements_span[2].text
+            submission_type = elements_span[2].text
         # get status
         right_content = call.find("eui-card-header-right-content")
         # get spans inside right_content
         spans = right_content.find_all("span")
         # get status
-        status = spans[1].text
+        call_state = spans[1].text
         # get programme and type of action inside element eui-card-content
         card_content = call.find("eui-card-content")
         # get elements strong
@@ -403,16 +426,16 @@ class EUFunding(Crawler):
             "call_code": call_code,
             "call_title": title,
             "call_href": self.global_url + href,
-            "call_type": call_type,
+            "funding_mechanism": funding_mechanism,
             "opening_date": opening_date,
-            "next_deadline": next_deadline,
-            "deadline_model": deadline_model,
-            "status": status,
+            "next_deadline_date": next_deadline_date,
+            "submission_type": submission_type,
+            "call_state": call_state,
             "programme": programme,
             "type_of_action": type_of_action,
             "budget_total": 0,
             "currency": self.currency,
-            "location": self.location,
+            "eligibility_region": self.eligibility_region,
         }
 
         return fields
@@ -520,6 +543,14 @@ class EUFunding(Crawler):
                 # check if title not in fields_extended, then saved into extra information
                 if title not in fields_extended:
                     fields_extended["extra_information"] += plain_text + "\n\n"
+
+            # add information other fields
+            fields_to_add = ["topic_description", "topic_destination", "topic_conditions_and_documents",
+                             "budget_overview", "partner_search_announcements", "start_submission",
+                             "get_support"]
+            for key in fields_to_add:
+                if fields_extended[key].strip() != "":
+                    fields_extended["extra_information"] += fields_extended[key] + "\n\n"
 
         return fields_extended, links
 

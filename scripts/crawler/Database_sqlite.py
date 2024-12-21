@@ -64,16 +64,16 @@ class Database:
                 call_code TEXT NOT NULL,
                 call_title TEXT NOT NULL,
                 call_href TEXT NOT NULL,
-                call_type TEXT DEFAULT NULL,
+                funding_mechanism TEXT DEFAULT NULL,
                 opening_date TEXT DEFAULT NULL,
-                next_deadline TEXT DEFAULT NULL,
-                deadline_model TEXT DEFAULT NULL,
-                status TEXT DEFAULT NULL,
+                next_deadline_date TEXT DEFAULT NULL,
+                submission_type TEXT DEFAULT NULL,
+                call_state TEXT DEFAULT NULL,
                 programme TEXT DEFAULT NULL,
                 type_of_action TEXT DEFAULT NULL,
                 budget_total REAL DEFAULT NULL,
                 currency VARCHAR(30) DEFAULT NULL,
-                scope TEXT NOT NULL,
+                eligibility_region TEXT NOT NULL,
                 type_company VARCHAR(100) DEFAULT NULL,
                 PRIMARY KEY (call_code, call_title)
             );
@@ -271,18 +271,18 @@ class Database:
                 result = []
             if len(result) == 0:
                 sql = (
-                    "INSERT INTO calls_basic_information (call_code, call_title, call_href, call_type, opening_date, next_deadline, deadline_model, status, programme, type_of_action, budget_total, scope) "
+                    "INSERT INTO calls_basic_information (call_code, call_title, call_href, funding_mechanism, opening_date, next_deadline_date, submission_type, status, programme, type_of_action, budget_total, scope) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
                 val = (
-                    call['call_code'], call['call_title'], call['call_href'], call['call_type'], call['opening_date'],
-                    call['next_deadline'], call['deadline_model'], call['status'], call['programme'],
+                    call['call_code'], call['call_title'], call['call_href'], call['funding_mechanism'], call['opening_date'],
+                    call['next_deadline_date'], call['submission_type'], call['status'], call['programme'],
                     call['type_of_action'], call['budget_total'], call['scope'])
             else:
                 # update
                 sql = (
-                    "UPDATE calls_basic_information SET call_href = ?, call_type = ?, opening_date = ?, next_deadline = ?, deadline_model = ?, status = ?, programme = ?, type_of_action = ?, budget_total = ?, scope = ? WHERE call_code = ? and call_title = ?")
-                val = (call['call_href'], call['call_type'], call['opening_date'], call['next_deadline'],
-                       call['deadline_model'], call['status'], call['programme'], call['type_of_action'],
+                    "UPDATE calls_basic_information SET call_href = ?, submission_type = ?, opening_date = ?, next_deadline_date = ?, submission_type = ?, status = ?, programme = ?, type_of_action = ?, budget_total = ?, scope = ? WHERE call_code = ? and call_title = ?")
+                val = (call['call_href'], call['submission_type'], call['opening_date'], call['next_deadline_date'],
+                       call['submission_type'], call['status'], call['programme'], call['type_of_action'],
                        call['budget_total'], call['scope'], call['call_code'], call['call_title'])
 
             # Ejecuta la inserción o actualización
