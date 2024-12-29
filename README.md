@@ -180,7 +180,7 @@ docker exec db-1 sh -c "mysql -h localhost -u root -ppassword -v < /tmp/calls.sq
 Where **'db-1'** is the name of the database container and **'password'** is the password set in the .env file.
 
 We provide also a snapshot of the database with all pdf files (data/pdf_collection-initial.snapshot). 
-1. Uncompress the snapshot rar file (pdf_collection-initial.part1.rar & pdf_collection-initial.part2.rar) to get the snapshot file.
+1. Uncompress the snapshot rar file to get the snapshot file.
 2. Upload this snapshot into qdrant database using the collection name: **'pdf_collection'**.
 
 ## Licenses
