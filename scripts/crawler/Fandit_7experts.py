@@ -1,6 +1,5 @@
 import math
 from random import randrange
-
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
@@ -8,6 +7,11 @@ from Crawler import Crawler
 import requests
 import time
 import re
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 
 class Fandit(Crawler):
     def __init__(self, applicants=""):
@@ -39,8 +43,8 @@ class Fandit(Crawler):
         # login utl
         self.url_login = 'https://7experts.app.fandit.es/auth/login?redirectTo=%2Farea-privada%2Fdashboard'
         # user fandit
-        self.username = "dcalvo@plainconcepts.com"
-        self.password = "7Experts.2024"
+        self.username = os.getenv("FANDIT_USERNAME")
+        self.password = os.getenv("FANDIT_PASSWORD")
         # auth token
         self.auth_token = None
         # number max of attempts to login
@@ -132,8 +136,6 @@ class Fandit(Crawler):
             print(f"Error login: {e}")
             return False
 
-
-
     def accept_cookies(self):
         """
         Accept cookies if banner appears
@@ -147,7 +149,6 @@ class Fandit(Crawler):
             time.sleep(2)  # Wait a moment to make sure the banner closes
         except Exception as e:
             print(f"\nCookie banner not found or already accepted: {e}")
-
 
     def getData(self, page=1, is_open='true', search_tab=1):
         # get Data for one page

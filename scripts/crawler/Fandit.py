@@ -4,6 +4,10 @@ from Crawler import Crawler
 from selenium.webdriver.common.by import By
 import requests
 import time
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 class Fandit(Crawler):
@@ -20,8 +24,8 @@ class Fandit(Crawler):
         # login utl
         self.url_login = 'https://api.fandit.es/api/v1/dj-rest-auth/login/'
         # user fandit
-        self.username = "ssanchezromer@uoc.edu"
-        self.password = "3.8Z@rAatHqC4WU"
+        self.username = os.getenv("FANDIT_USERNAME")
+        self.password = os.getenv("FANDIT_PASSWORD")
         # auth token
         self.auth_token = None
         # number max of attempts to login
