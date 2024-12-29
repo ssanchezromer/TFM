@@ -65,6 +65,8 @@ docker compose --profile cpu up
 
 ![n8n.io - Screenshot](https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/main/assets/n8n-demo.gif)
 
+[Original Local AI Starter Kit](https://github.com/n8n-io/self-hosted-ai-starter-kit)
+
 The main component of the self-hosted AI starter kit is a docker compose file
 pre-configured with network and disk so there isn’t much else you need to
 install. After completing the installation steps above, follow the steps below
@@ -170,12 +172,16 @@ python main.py
 
 ## Don't start from scratch
 
-If you want to start with previous data into the database, you can use the following commands:
+If you want to start with previous data into the mysql database, you can use the following commands:
 ```
-docker-compose cp data/calls.sql db-1:/tmp/
-docker-compose exec db-1 sh -c "mysql -h localhost -u root -ppassword -v < /tmp/calls.sql"
+docker cp scripts/crawler/data/calls.sql db-1:/tmp/
+docker exec db-1 sh -c "mysql -h localhost -u root -ppassword -v < /tmp/calls.sql"
 ```
-Where db-1 is the name of the database container and password is the password set in the .env file.
+Where **'db-1'** is the name of the database container and **'password'** is the password set in the .env file.
+
+We provide also a snapshot of the database with all pdf files (data/pdf_collection-initial.snapshot). 
+1. Uncompress the snapshot rar file (pdf_collection-initial.part1.rar & pdf_collection-initial.part2.rar) to get the snapshot file.
+2. Upload this snapshot into qdrant database using the collection name: **'pdf_collection'**.
 
 ## Licenses
 
