@@ -6,8 +6,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -240,
-        0
+        -600,
+        -320
       ],
       "id": "c9ee08f6-c575-44b1-b5a0-e7370404d9c7",
       "name": "When clicking ‘Test workflow’"
@@ -18,7 +18,7 @@
         "url": "http://host.docker.internal:5000/get-points",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"question\": \"{{ $json.question }}\",\n  \"field_id\": [{{ $json.field_id.join(\",\") }}],\n  \"limit\": {{ $json.limit }}\n}",
+        "jsonBody": "={\n  \"question\": \"{{ $json.question }}\",\n  \"file_ids\": \"{{ $json.file_ids }}\",\n  \"limit\": {{ $json.limit }}\n}",
         "options": {
           "response": {
             "response": {
@@ -30,8 +30,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        200,
-        0
+        700,
+        -420
       ],
       "id": "e715603a-25f2-40ad-9eea-907e70cd0844",
       "name": "HTTP Request"
@@ -42,20 +42,20 @@
           "assignments": [
             {
               "id": "4b96b5d8-37fc-465b-8a21-bbd41899233c",
-              "name": "chatInput",
-              "value": "={{ $json.chatInput }}",
+              "name": "question",
+              "value": "={{ $('call code & call title').first().json.chatInput }}",
               "type": "string"
             },
             {
               "id": "81325cba-df80-4e3b-850d-f87714e6b378",
-              "name": "field_id",
-              "value": "={{ $json.query }}",
-              "type": "array"
+              "name": "file_ids",
+              "value": "={{ $json.file_ids }}",
+              "type": "string"
             },
             {
               "id": "3fdba295-c22a-4730-92da-a383eb307482",
               "name": "limit",
-              "value": "={{ $json.limit }}",
+              "value": "={{ $('call code & call title').first().json.limit }}",
               "type": "number"
             }
           ]
@@ -65,31 +65,222 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -20,
-        0
+        540,
+        -420
       ],
       "id": "68c89135-7d1c-4046-a65d-0014acd7b2b8",
       "name": "Edit Fields"
-    }
-  ],
-  "pinData": {
-    "When clicking ‘Test workflow’": [
-      {
-        "json": {
-          "query": "[123, 456]",
-          "chatInput": "My company is in Europe. How many grants are available for my company?",
-          "sessionId": "51259e769bb547ffb46626330da3832a",
-          "limit": "3"
+    },
+    {
+      "parameters": {
+        "content": "## Search Qdrant\n- **Inputs:** question, call_code, call_title and limit\n- **Output:** summarized response to question searched in documents related",
+        "height": 420,
+        "width": 1500
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -660,
+        -440
+      ],
+      "typeVersion": 1,
+      "id": "2d932e95-b8dc-42aa-8d64-eee3e00239fd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c7d48bb-081f-4844-b4fb-2861c4c14cc4",
+              "name": "call_code",
+              "value": "=%{{ $json.query.call_code }}%",
+              "type": "string"
+            },
+            {
+              "id": "b5a681f7-783d-408b-ad2e-48b780dfe1e8",
+              "name": "call_title",
+              "value": "=%{{ $json.query.call_title }}%",
+              "type": "string"
+            },
+            {
+              "id": "48bf78f4-8aa5-46e7-a426-67f0e45eef9f",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "cf8d8721-3659-4e26-a427-122e5c35122d",
+              "name": "limit",
+              "value": "={{ $json.limit }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -320
+      ],
+      "id": "0966a2b7-76c2-4aaf-85f1-fa6a67ed5e41",
+      "name": "call code & call title"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5445d1cc-8d2a-4f18-8d7e-204595871a61",
+              "leftValue": "={{ $('Get all file_id') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "843123f2-a34b-46ec-a256-cabc4bd0e8c3",
+              "leftValue": "={{ $('Get all file_id').item.json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        -400
+      ],
+      "id": "73c75807-a2cf-4f1d-bdde-2f267f70237c",
+      "name": "Not empty?"
+    },
+    {
+      "parameters": {
+        "functionCode": "return [\n  {\n    json: {\n      file_ids: items.map(item => item.json.file_id).join(','),\n    },\n  }\n];"
+      },
+      "name": "Create an array of objects",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        360,
+        -420
+      ],
+      "typeVersion": 1,
+      "id": "c063af12-3400-4c60-acbd-ba4072afec94"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1dac354a-1808-43ae-a1f5-e06a30943ad8",
+              "name": "output",
+              "value": "No call_code and call_title are specified",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        -180
+      ],
+      "id": "d52c3cc8-2a31-441a-9850-848003cc3d3a",
+      "name": "Blank response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "Select DISTINCT(file_id), file_title FROM calls_urls WHERE call_code LIKE $1 AND call_title LIKE $2;",
+        "options": {
+          "queryReplacement": "={{ $json.call_code }},{{ $json.call_title }}"
+        }
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        -20,
+        -400
+      ],
+      "id": "bfcabbc3-18f5-450b-a771-872341cb1eb5",
+      "name": "Get all file_id",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "YVMSvciBFRX5zwTd",
+          "name": "MySQL account"
         }
       }
-    ]
-  },
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "70ad3e40-04d7-4f3f-b883-558a110a42c8",
+              "leftValue": "={{ $json.call_code }}",
+              "rightValue": "%%",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "89f4104f-ae8d-4d50-9b53-80782b217ea0",
+              "leftValue": "={{ $json.call_title }}",
+              "rightValue": "%%",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        -320
+      ],
+      "id": "cef6e59c-9508-46e3-afee-485adf1eaf0f",
+      "name": "data?"
+    }
+  ],
+  "pinData": {},
   "connections": {
     "When clicking ‘Test workflow’": {
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "call code & call title",
             "type": "main",
             "index": 0
           }
@@ -111,16 +302,92 @@
           }
         ]
       ]
+    },
+    "call code & call title": {
+      "main": [
+        [
+          {
+            "node": "data?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not empty?": {
+      "main": [
+        [
+          {
+            "node": "Create an array of objects",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Blank response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all file_id": {
+      "main": [
+        [
+          {
+            "node": "Not empty?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "data?": {
+      "main": [
+        [
+          {
+            "node": "Get all file_id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Blank response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an array of objects": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c7655162-4328-4345-9518-63b3a1266b94",
+  "versionId": "ebc87d73-a5c4-46c9-9895-72e25c5171f8",
   "meta": {
     "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
   },
   "id": "CjpHbo95Aq1DGLtj",
-  "tags": []
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
 }

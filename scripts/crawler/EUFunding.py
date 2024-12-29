@@ -116,8 +116,15 @@ class EUFunding(Crawler):
             # get all status name list
             for i, call in enumerate(call_fields):
                 call_code = call['call_code']
+                call_title = call['call_title']
                 status_name = f"Getting extended fields for call code ({i + 1}/{len(call_fields)}): {call_code}"
                 status_name_list += (status_name,)
+                # remove call from calls_delete
+                for j in range(len(self.calls_delete)):
+                    if (self.calls_delete[j]['call_code'] == call_code and
+                            self.calls_delete[j]['call_title'] == call_title):
+                        del self.calls_delete[j]
+                        break
 
             with progress_bar as p:
                 for call_num in p.track(range(len(call_fields))):

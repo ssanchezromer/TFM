@@ -1,0 +1,960 @@
+{
+  "name": "SUPERAGENT full",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json.body?.chatInput || $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json.body?.sessionId || $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "42253970-3e07-4ea0-b47e-f12d165b2b90",
+              "name": "fix_query",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "7cb269b1-325b-4a5c-aeaa-f099a526c95a",
+              "name": "limit",
+              "value": "3",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "741f2ff8-b4d5-4533-b630-029dc50dff14",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoke_n8n_agent",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ac2d521f-784b-4600-a0ae-710d309f394e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        -80
+      ],
+      "webhookId": "3e8e6c14-36ec-46de-916f-6932e062197b",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Qt5bPA3qU31JUzbG",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nMy name is Granty. How can I assist you today?",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -360,
+        -280
+      ],
+      "id": "cbf55cbb-8d3d-4382-8830-aceae8854f7a",
+      "name": "When chat message received",
+      "webhookId": "85d970c4-a172-4303-b942-6546624d938c"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        120
+      ],
+      "id": "04e1ea37-dbf1-4b68-9b34-c62716846690",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {
+          "temperature": 0.1,
+          "numCtx": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        580,
+        120
+      ],
+      "id": "3f9a4e7e-0daa-495f-b0e2-ee9c71bc7170",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        540,
+        360
+      ],
+      "id": "d6f3c92f-e7bd-490c-acb5-a6673dbba96f",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "name": "search_qdrant",
+        "description": "The search_qdrant tool is designed to generate a response to the user's query (chatInput) by searching for relevant information in the Qdrant vector database. Please, execute first get_call_code_and_call_title tool to get call_code and call_title if dont't know.",
+        "workflowId": {
+          "__rl": true,
+          "value": "CjpHbo95Aq1DGLtj",
+          "mode": "list",
+          "cachedResultName": "Search Qdrant"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "chatInput",
+              "stringValue": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "limit",
+              "stringValue": "={{ $json.limit }}"
+            }
+          ]
+        },
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\n\"type\": \"object\",\n\"properties\": {\n\t\"call_code\": {\n\t\t\"type\": \"string\",\n\t\t\"description\": \"Code of the call\"\n    },\n    \"call_title\": {\n\t\t\"type\": \"string\",\n\t\t\"description\": \"Title of the call\"\n\t\t}\n\t},\n  \"required\": [\"call_code\", \"call_title\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        360
+      ],
+      "id": "61bf3463-35f0-445f-8c5f-821061200241",
+      "name": "Search Qdrant"
+    },
+    {
+      "parameters": {
+        "name": "search_sql",
+        "description": "The search_sql tool is responsible for **generating and executing `SELECT` SQL queries** to retrieve structured grant and proposal data from a relational database. It converts natural language queries into valid `SELECT` statements and ensures secure, read-only access to the database. First execute get_question tool to get the question.",
+        "workflowId": {
+          "__rl": true,
+          "value": "pOhpefMBcpofSDwm",
+          "mode": "list",
+          "cachedResultName": "Search SQL"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "chatInput",
+              "stringValue": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "sessionId",
+              "stringValue": "={{ $json.sessionId }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1160,
+        360
+      ],
+      "id": "8b9c2106-dfb4-45d0-99e5-e699189f93de",
+      "name": "Search SQL"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an intelligent agent specializing in answering questions about funding opportunities and grants. Your primary task is to:  \n1. Understand the user's query.  \n2. Determine if you have sufficient information (`call_code`, `call_title`, company details, or eligibility region) to retrieve the answer.  \n3. If information is missing, interact with the user to collect it before proceeding.  \n\n### **Decision-Making Process**\n\n1. **Analyze the User's Query**  \n   - Identify if the question requires:  \n     - General database information (e.g., \"How many grants are available?\").  \n     - Filters based on company details (e.g., \"How many grants are available for my company?\").  \n     - Specific information about a particular grant.  \n\n2. **Check Available Information**  \n   - Determine if you already know the required `call_code` and `call_title` for specific grant-related queries.  \n   - If these identifiers are missing:  \n     - Ask the user for the funding code or title.  \n     - If the user doesn’t know them, gather related details (e.g., company information, eligibility region).  \n\n3. **Choose the Right Tools**  \n   - For general questions, use tools directly (e.g., `search_sql` for counts or summaries).  \n   - If additional details are needed:  \n     - Use `get_call_code_and_call_title` to identify the funding opportunity.  \n     - Use `get_company_type_and_eligibility_region` to filter by company details.  \n   - Once the grant is identified:  \n     - Use `search_sql` for structured information.  \n     - Use `get_basic_information` for general details.  \n     - Use `search_qdrant` for document-specific queries. \n\n### **Tool Workflow Examples**\n\n#### Example 1: General Query  \n- **User Question**: \"How many grants are in the database?\"  \n  - Use `search_sql` to retrieve the total count.\n\n#### Example 2: Company-Based Query  \n- **User Question**: \"My company is ABC. How many grants are available?\"  \n  1. Use `get_company_type_and_eligibility_region` with \"ABC\" to retrieve the company type and eligibility region.  \n  2. Use `search_sql` with the retrieved data filtering by type_company and eligibility_region and count grants.\n\n#### Example 3: Basic Information About a Grant  \n- **User Question**: \"Can you give me basic information about this grant?\"  \n  1. Check if `call_code` and `call_title` are known.  \n  2. If not, use `get_call_code_and_call_title` to identify them.  \n  3. Use `get_basic_information` to retrieve basic details.\n\n#### Example 4: Complex question About a Grant  \n- **User Question**: \"What are the eligibility criteria for this grant?\"  \n  1. Check if `call_code` and `call_title` are known.  \n  2. If not, use `get_call_code_and_call_title` tool to identify them.  \n  3. Use `search_qdrant` tool with the retrieved `call_code` and `call_title`.\n\n\n### **Key Instructions for the Agent**\n- **Ask Questions**: If information is missing, ask the user for clarifications (e.g., funding code, company name).  \n- **Iterate**: Use tools sequentially to refine the query and gather data before responding.  \n- **Be Accurate**: Provide answers based only on verified and retrieved information. \n- **Keep all the links**, **score results** and all the information provided by the tools, especially by the tools `search_qdrant` and `get_basic_information`.",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        860,
+        -80
+      ],
+      "id": "22d1873b-c5de-440c-8d3e-42b2381f48e6",
+      "name": "SUPERAGENT",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "notesInFlow": true,
+      "notes": "AI orchestrator for grants"
+    },
+    {
+      "parameters": {
+        "name": "get_basic_information",
+        "description": "The get_basic_information tool retrieves detailed information about a specific call for proposals or grant based on its call_code and call_title. It provides key details about the call if it exists or informs the user if no matching information is found.",
+        "workflowId": {
+          "__rl": true,
+          "value": "EuPi9JNGfwbScoFT",
+          "mode": "list",
+          "cachedResultName": "Get basic information"
+        },
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\n\"type\": \"object\",\n\"properties\": {\n\t\"call_code\": {\n\t\t\"type\": \"string\",\n\t\t\"description\": \"Code of the call\"\n    },\n    \"call_title\": {\n\t\t\"type\": \"string\",\n\t\t\"description\": \"Title of the call\"\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        360
+      ],
+      "id": "04541e9e-ff5d-41f6-8077-fa9f457062b4",
+      "name": "Get basic information"
+    },
+    {
+      "parameters": {
+        "name": "get_call_code_and_call_title",
+        "description": "Identifies the call_code and call_title from the user's input or conversation context. This tool analyzes the input to determine if a funding call or grant is referenced and returns the relevant call_code and call_title in JSON format. If only one value is present, it fills the available field and leaves the other empty. If neither is found, it returns both as empty strings.\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "F3q53rJfQeojkSCi",
+          "mode": "list",
+          "cachedResultName": "Get call code and title"
+        },
+        "fields": {
+          "values": [
+            {
+              "name": "chatInput",
+              "stringValue": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "sessionId",
+              "stringValue": "={{ $json.sessionId }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        760,
+        360
+      ],
+      "id": "f628a0a1-3216-4d4d-ad1e-3605a6eeeb39",
+      "name": "Get call code and call title"
+    },
+    {
+      "parameters": {
+        "name": "get_company_type_and_location",
+        "description": "The get_company_type_and_location tool retrieves essential details about a company, including its type (e.g., Large Company, SME, Organization) and eligibility_region (city, country, or region). It uses input data such as the company's name, URL, or CIF (tax ID) to produce this output.\n\nThe retrieved details (type_company and eligibility_region) are aligned with fields in the calls_basic_information table, allowing targeted filtering of grant and proposal data specific to the company.",
+        "workflowId": {
+          "__rl": true,
+          "value": "FwAZeP4Berwnv4qz",
+          "mode": "list",
+          "cachedResultName": "Get company details"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1020,
+        360
+      ],
+      "id": "00c9b9df-e447-4677-9dd5-bb7bbfc04c32",
+      "name": "Get company type and eligibility region"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "couawe5x9PgFl1CB",
+          "mode": "list",
+          "cachedResultName": "Get question"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        140,
+        -180
+      ],
+      "id": "e7604178-1023-4385-a8b2-ada7af85c6fa",
+      "name": "Get question",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3cc7d56b-165a-4796-b68d-6cd9baf1f4d0",
+              "name": "chatInput",
+              "value": "={{ $('Edit Fields').item.json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3e4f5440-27fe-4b27-b131-4ebf8a0c6b53",
+              "name": "sessionId",
+              "value": "={{ $('Edit Fields').item.json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        700,
+        -340
+      ],
+      "id": "febeeecc-ea29-41b4-a7c0-ef945b14eafc",
+      "name": "Prepare fields"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "R4ncOEJvhCKYPDa0",
+          "mode": "list",
+          "cachedResultName": "Response no question"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        -340
+      ],
+      "id": "0a471d6e-6d43-4d4f-9377-55c2d51e463a",
+      "name": "Response no question",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "20113840-848a-4f06-b753-54fc663edb67",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        -180
+      ],
+      "id": "53be5e24-a2b8-4b8d-a799-d1a02cc87ccd",
+      "name": "no question ?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3ae9c8b3-cc36-47c7-8020-54d0c3867307",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "85ac5307-23ee-4d5b-8258-6861cc981360",
+              "name": "sessionId",
+              "value": "={{ $('Edit Fields').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "3879eb25-2d75-4265-9aaa-68de4bd104e6",
+              "name": "limit",
+              "value": "={{ $('Edit Fields').item.json.limit }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -80
+      ],
+      "id": "4368c768-5f51-43af-90eb-c36f9f9006db",
+      "name": "Inputs Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {
+          "temperature": 0.1,
+          "numCtx": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -40
+      ],
+      "id": "948c8845-50ab-4e44-beb7-7436b4206636",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are a final response agent designed to refine and enhance answers for the user. Your responsibilities include:\n1. Ensuring the response aligns with the user's language.\n2. Preserving the full content and meaning of the original response.\n3. Avoiding technical details like database schemas or SQL examples.\n\nInput:\nUser's question: \n{{ $json.chatInput }}\n\nResponse to process: \n{{ $json.output }}\n\nOutput:\nReturn the complete response translated (if necessary) or exactly as it is if no translation is needed ro modification.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1640,
+        -240
+      ],
+      "id": "1567dd4e-8934-4459-a8fb-f2ad704bb829",
+      "name": "Response Agent"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1460,
+        -240
+      ],
+      "id": "a12013f8-92bf-4ad9-97dc-58c416e73be9",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "## Filter question & reformulate\n- Determine if user question or conversation history contains a related question to grants\n- Reformulate the question or empty question",
+        "height": 440,
+        "width": 440,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        60,
+        -360
+      ],
+      "typeVersion": 1,
+      "id": "8ff8d3c5-c66a-4c38-b0e3-e7c6614c230f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## No question way\n- Polite response to greetings or unrelated question",
+        "height": 240,
+        "width": 820
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        540,
+        -420
+      ],
+      "typeVersion": 1,
+      "id": "3dd27235-d762-4ec9-8077-d38ce063b694",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Question way\n- Try to response the user question using tools",
+        "height": 420,
+        "width": 820,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        540,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "e8522c82-f934-4d0d-9bbd-4eeffbc73a8e",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Response\n- Ensure use the same user language\n- Clean response\n",
+        "height": 440,
+        "width": 760,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1400,
+        -340
+      ],
+      "typeVersion": 1,
+      "id": "038823e8-61fc-4d34-b3d6-671f310051ae",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Super Agent tools\n",
+        "height": 220,
+        "width": 880,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        520,
+        280
+      ],
+      "typeVersion": 1,
+      "id": "df19857c-a2ba-4b6a-b6d8-7384af2290ff",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Chat input or Open WebUI\n",
+        "height": 440,
+        "width": 440,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -420,
+        -360
+      ],
+      "typeVersion": 1,
+      "id": "073e084f-05da-42bf-8cab-fd0515dc2a0b",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a5a41330-7da0-4b64-9e88-ed8d1a41dae9",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "c316cff5-55e6-48d1-ad51-9b1d2ceb55c1",
+              "name": "chatInput",
+              "value": "={{ $('Inputs Agent').first().json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "90d81bfa-16df-4380-9c98-b739123f179e",
+              "name": "sessionId",
+              "value": "={{ $('Inputs Agent').first().json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        -80
+      ],
+      "id": "4e89e517-5c3b-4a52-83c0-77cbbced934f",
+      "name": "Output & Question"
+    },
+    {
+      "parameters": {
+        "name": "get_schema",
+        "description": "The get_schema tool retrieves the schema of a MySQL database. It provides the structure of all tables, including table names, column names, data types, and relationships, enabling tools and workflows to understand the database layout for effective query generation.",
+        "workflowId": {
+          "__rl": true,
+          "value": "DLnGtpP6QA5rLqef",
+          "mode": "list",
+          "cachedResultName": "Get schema"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        360
+      ],
+      "id": "d31f3609-fece-45d7-a339-1187114d5481",
+      "name": "Get schema"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1740,
+        -40
+      ],
+      "id": "b6658446-90fd-491f-98fa-04b54368ee87",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "adcceb86-9dd2-47ab-bf2a-aaf3b0ca781b",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1960,
+        -240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Qdrant": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search SQL": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SUPERAGENT": {
+      "main": [
+        [
+          {
+            "node": "Output & Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get basic information": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get call code and call title": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get company type and eligibility region": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get question": {
+      "main": [
+        [
+          {
+            "node": "no question ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare fields": {
+      "main": [
+        [
+          {
+            "node": "Response no question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response no question": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "no question ?": {
+      "main": [
+        [
+          {
+            "node": "Prepare fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inputs Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inputs Agent": {
+      "main": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Response Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Response Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output & Question": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get schema": {
+      "ai_tool": [
+        [
+          {
+            "node": "SUPERAGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Response Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c49f80c5-d1df-4345-8d37-528bd0ddd875",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "2P3gbYuGSR0j8GEx",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

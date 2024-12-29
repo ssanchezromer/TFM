@@ -282,7 +282,7 @@ class Database:
 
             # create tables for external sql file (tables.sql)
             cursor = self.connection.cursor()
-            with open("tables.sql", "r") as file:
+            with open(".data/tables.sql", "r") as file:
                 sql_commands = file.read().split(";")  # Split the file into commands
 
                 for command in sql_commands:
@@ -311,12 +311,12 @@ class Database:
             if call['opening_date'] == "":
                 call['opening_date'] = None
 
-            # remove call from calls_delete
-            for i in range(len(calls_delete)):
-                if (calls_delete[i]['call_code'] == call['call_code'] and
-                        calls_delete[i]['call_title'] == call['call_title']):
-                    del calls_delete[i]
-                    break
+            # remove call from calls_delete (removed outside)
+            # for i in range(len(calls_delete)):
+            #     if (calls_delete[i]['call_code'] == call['call_code'] and
+            #             calls_delete[i]['call_title'] == call['call_title']):
+            #         del calls_delete[i]
+            #         break
             self.connect_database()
             cursor = self.get_cursor()
             # check first if exists in calls_basic_information
@@ -338,7 +338,6 @@ class Database:
                     call['next_deadline_date'], call['submission_type'], call['call_state'], call['programme'],
                     call['type_of_action'], call['budget_total'], call['eligibility_region'], call['extra_information'])
             else:
-                # print(f"Actualizamos con extra information: {call['extra_information']}")
                 # update
                 sql = (
                     "UPDATE calls_basic_information SET call_href = %s, funding_mechanism = %s, opening_date = %s,"

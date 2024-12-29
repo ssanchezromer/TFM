@@ -19,33 +19,6 @@ Development of a GPT capable of synthesizing information from a call for proposa
 - **n8n:** Folder with the n8n workflows
 - **scripts:** Folder with the scripts for the project
 
-## Installation (Local environment for scraping)
-
-After downloading the code from the **source** folder, follow these steps to run the application:  
-
-**1. Create the environment (venv) into crawler folder:**  
-```
-python -m venv venv  
-```
-**2. Activate the environment:**  
-
-  Windows:  
-```
-venv\Scripts\activate  
-```
-  macOS & Linux:  
-```
-venv/bin/activate  
-```
-**3. Install the libraries:**  
-```
-pip install -r requirements.txt  
-```
-**4. Start the crawl program:**  
-```
-python main.py  
-```
-
 ## Installation (Docker)
 
 ### For Nvidia GPU users
@@ -90,6 +63,8 @@ docker compose --profile cpu up
 
 ## ⚡️ Quick start and usage
 
+![n8n.io - Screenshot](https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/main/assets/n8n-demo.gif)
+
 The main component of the self-hosted AI starter kit is a docker compose file
 pre-configured with network and disk so there isn’t much else you need to
 install. After completing the installation steps above, follow the steps below
@@ -98,8 +73,8 @@ to get started.
 1. Open <http://localhost:5678/> in your browser to set up n8n. You’ll only
    have to do this once. You are NOT creating an account with n8n in the setup here,
    it is only a local account for your instance!
-2. Open the included workflow:
-   <http://localhost:5678/workflow/8Jf3isOLehcbu3cs>
+2. Open the included workflow (SuperAgent):
+   <http://localhost:5678/workflow/2P3gbYuGSR0j8GEx>
 3. Create credentials for every service:
    
    Ollama URL: http://ollama:11434
@@ -108,9 +83,6 @@ to get started.
 
    Qdrant URL: http://qdrant:6333 (API key can be whatever since this is running locally)
 
-   Google Drive: Follow [this guide from n8n](https://docs.n8n.io/integrations/builtin/credentials/google/).
-   Don't use localhost for the redirect URI, just use another domain you have, it will still work!
-   Alternatively, you can set up [local file triggers](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.localfiletrigger/).
 4. Select **Test workflow** to start running the workflow.
 5. If this is the first time you’re running the workflow, you may need to wait
    until Ollama finishes downloading Llama3.1. You can inspect the docker
@@ -167,3 +139,47 @@ docker compose create && docker compose up
 docker compose --profile cpu pull
 docker compose create && docker compose --profile cpu up
 ```
+
+
+## Installation (Local environment for scraping)
+
+After downloading the code from the **source** folder, go to crawler folder and follow these steps to run the application:  
+
+**1. Create the environment (venv) into crawler folder:**  
+```
+python -m venv venv  
+```
+**2. Activate the environment:**  
+
+  Windows:  
+```
+venv\Scripts\activate  
+```
+  macOS & Linux:  
+```
+venv/bin/activate  
+```
+**3. Install the libraries:**  
+```
+pip install -r requirements.txt  
+```
+**4. Start the crawl program:**  
+```
+python main.py  
+```
+
+## Don't start from scratch
+
+If you want to start with previous data into the database, you can use the following commands:
+```
+docker-compose cp data/calls.sql db-1:/tmp/
+docker-compose exec db-1 sh -c "mysql -h localhost -u root -ppassword -v < /tmp/calls.sql"
+```
+Where db-1 is the name of the database container and password is the password set in the .env file.
+
+## Licenses
+
+This environment project (originally created by the n8n team, link at the top of the README) is licensed under the Apache License 2.0 - see the
+[LICENSE](LICENSE) file for details.
+
+This implementation project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA) - see the [LICENSE](LICENSE2) file for details.

@@ -1,0 +1,224 @@
+{
+  "name": "Response no question",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -20
+      ],
+      "id": "23f7c8e1-4661-48d8-b1c4-bef7f7cf1697",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User's question:  {{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are an assistant specialized in handling queries related to funding calls, grants, and funded projects. Your goal is to respond politely and clearly when the input is not a valid question. In such cases, you should briefly remind the user of this chat's capabilities and encourage them to ask relevant questions.\n\n### Response structure:\n\n1. Be polite and professional.\n2. Indicate that no clear question was detected.\n3. Mention your primary areas of expertise.\n4. Invite the user to ask a relevant question.\n5. **Always respond in the same language as the user's input** to ensure clear and accessible communication.\n\nUser's question:  {{ $json.chatInput }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -220,
+        -20
+      ],
+      "id": "d179bc96-4b5a-472d-8459-3d254f61c63c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -120,
+        180
+      ],
+      "id": "ca69a0c1-29b2-4661-bf8d-90947acab812",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91266cf5-ac91-40f7-b7b5-b80a0c496972",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3ae3c945-a080-461a-a44f-8cae5e420c9e",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -420,
+        -20
+      ],
+      "id": "3b71ceb0-5292-473d-b0dc-5a4eed19c399",
+      "name": "Edit Field"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        180
+      ],
+      "id": "0092a7c9-61e4-4b95-a984-f2f666c85d8b",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cdafc8de-81e8-49ed-85ae-087f8007d140",
+              "name": "output",
+              "value": "={{ $('AI Agent').first().json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "e98d53c8-20bf-4fc0-b2c7-613299f5f7f8",
+              "name": "chatInput",
+              "value": "={{ $('Edit Field').first().json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "6fbc3c33-daa1-4310-b7b8-3316924dacd6",
+              "name": "sessionId",
+              "value": "={{ $('Edit Field').first().json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        100,
+        -20
+      ],
+      "id": "2ec39532-75a7-4c24-be55-4ec401067b84",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "## Response no question\n- Polite response to unrelated question",
+        "height": 500,
+        "width": 1000
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -700,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "02668714-7c17-49ab-8343-10ec751c7640",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Field": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c545a532-afcf-4998-b22a-9e105ff190a6",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "R4ncOEJvhCKYPDa0",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

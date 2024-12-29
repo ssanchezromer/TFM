@@ -19,7 +19,7 @@
             {
               "id": "5c3e6a49-9cd9-46d1-a4e9-578dc1f26e46",
               "name": "schema",
-              "value": "USE calls;\n\n-- Table: calls_basic_information\nCREATE TABLE calls_basic_information (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    call_href VARCHAR(250) NOT NULL,\n    call_type VARCHAR(250),\n    opening_date VARCHAR(250),\n    next_deadline VARCHAR(250),\n    deadline_model VARCHAR(250),\n    status VARCHAR(100),\n    programme VARCHAR(250),\n    type_of_action VARCHAR(250),\n    budget_total FLOAT,\n    location VARCHAR(100) NOT NULL,\n    type_company VARCHAR(100),\n    PRIMARY KEY (call_code, call_title)\n);\n\n-- Table: calls_budget_information\nCREATE TABLE calls_budget_information (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    budget_topic VARCHAR(250) NOT NULL,\n    budget_amount VARCHAR(250) NOT NULL,\n    budget_stages VARCHAR(250) NOT NULL,\n    budget_opening_date VARCHAR(250) NOT NULL,\n    budget_deadline VARCHAR(250) NOT NULL,\n    budget_contributions VARCHAR(250) NOT NULL,\n    budget_indicative_number_of_grants VARCHAR(250) NOT NULL,\n    PRIMARY KEY (call_code, call_title, budget_topic)\n);\n\n-- Table: calls_description_information\nCREATE TABLE calls_description_information (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    topic_description TEXT NOT NULL,\n    topic_destination TEXT NOT NULL,\n    topic_conditions_and_documents TEXT NOT NULL,\n    budget_overview TEXT NOT NULL,\n    partner_search_announcements TEXT NOT NULL,\n    start_submission TEXT NOT NULL,\n    get_support TEXT NOT NULL,\n    extra_information TEXT NOT NULL,\n    PRIMARY KEY (call_code, call_title)\n);\n\n-- Table: calls_files_information\nCREATE TABLE calls_files_information (\n    id BIGINT NOT NULL AUTO_INCREMENT,\n    file_url VARCHAR(250) NOT NULL,\n    file_text MEDIUMTEXT NOT NULL,\n    file_summary TEXT NOT NULL,\n    file_error_description VARCHAR(250),\n    file_error_code VARCHAR(100),\n    PRIMARY KEY (id)\n);\n\n-- Table: calls_urls\nCREATE TABLE calls_urls (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    file_id BIGINT NOT NULL,\n    file_title VARCHAR(250) NOT NULL,\n    PRIMARY KEY (call_code, call_title, file_id, file_title),\n    CONSTRAINT fk_file_id FOREIGN KEY(file_id) REFERENCES calls_files_information (id)\n);\n",
+              "value": "USE calls;\n-- Table: calls_basic_information\nCREATE TABLE IF NOT EXISTS calls_basic_information (\n    call_code varchar(150) NOT NULL,\n    call_title varchar(300) NOT NULL,\n    call_href varchar(250) NOT NULL,\n    funding_mechanism varchar(250) DEFAULT NULL,\n    opening_date date DEFAULT NULL,\n    next_deadline_date date DEFAULT NULL,\n    submission_type varchar(250) DEFAULT NULL,\n    call_state varchar(100) DEFAULT NULL,\n    programme varchar(250) DEFAULT NULL,\n    type_of_action varchar(250) DEFAULT NULL,\n    budget_total float DEFAULT NULL,\n    eligibility_region varchar(100) NOT NULL,\n    type_company VARCHAR(100) DEFAULT NULL,\n    extra_information longtext NOT NULL,\n    PRIMARY KEY (call_code, call_title) USING BTREE\n);\n\n-- Table: calls_budget_information\nCREATE TABLE calls_budget_information (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    budget_topic VARCHAR(250) NOT NULL,\n    budget_amount VARCHAR(250) NOT NULL,\n    budget_stages VARCHAR(250) NOT NULL,\n    budget_opening_date VARCHAR(250) NOT NULL,\n    budget_deadline VARCHAR(250) NOT NULL,\n    budget_contributions VARCHAR(250) NOT NULL,\n    budget_indicative_number_of_grants VARCHAR(250) NOT NULL,\n    PRIMARY KEY (call_code, call_title, budget_topic)\n);\n\n-- Table: calls_description_information\nCREATE TABLE calls_description_information (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    topic_description TEXT NOT NULL,\n    topic_destination TEXT NOT NULL,\n    topic_conditions_and_documents TEXT NOT NULL,\n    budget_overview TEXT NOT NULL,\n    partner_search_announcements TEXT NOT NULL,\n    start_submission TEXT NOT NULL,\n    get_support TEXT NOT NULL,\n    extra_information TEXT NOT NULL,\n    PRIMARY KEY (call_code, call_title)\n);\n\n-- Table: calls_files_information\nCREATE TABLE calls_files_information (\n    id BIGINT NOT NULL AUTO_INCREMENT,\n    file_url VARCHAR(250) NOT NULL,\n    file_text MEDIUMTEXT NOT NULL,\n    file_summary TEXT NOT NULL,\n    file_error_description VARCHAR(250),\n    file_error_code VARCHAR(100),\n    PRIMARY KEY (id)\n);\n\n-- Table: calls_urls\nCREATE TABLE calls_urls (\n    call_code VARCHAR(250) NOT NULL,\n    call_title VARCHAR(250) NOT NULL,\n    file_id BIGINT NOT NULL,\n    file_title VARCHAR(250) NOT NULL,\n    PRIMARY KEY (call_code, call_title, file_id, file_title),\n    CONSTRAINT fk_file_id FOREIGN KEY(file_id) REFERENCES calls_files_information (id)\n);\n",
               "type": "string"
             }
           ]
@@ -34,6 +34,21 @@
       ],
       "id": "5b87e24a-bf67-4c57-a9d4-79fd8ef2cde3",
       "name": "Schema"
+    },
+    {
+      "parameters": {
+        "content": "## Get schema \n- Get mysql schema database",
+        "height": 280,
+        "width": 460
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "e4d2f761-cc8d-43b1-a10b-2b114bc5def2",
+      "name": "Sticky Note"
     }
   ],
   "pinData": {},
@@ -52,9 +67,10 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "33e36e63-aa50-4632-8394-43e427965f00",
+  "versionId": "cf04a145-1d47-4bbc-88d0-d009599e5676",
   "meta": {
     "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
   },

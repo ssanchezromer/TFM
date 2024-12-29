@@ -1,0 +1,348 @@
+{
+  "name": "Get basic information",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        20
+      ],
+      "id": "25064989-f4b3-44a8-8743-58ab08382227",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e3f20c61-e962-43dd-9e95-c1fef5aa0f91",
+              "name": "call_code",
+              "value": "={{ $json.query.call_code }}",
+              "type": "string"
+            },
+            {
+              "id": "98c35ecc-08bc-4569-b8f5-e32670299c24",
+              "name": "call_title",
+              "value": "={{ $json.query.call_title }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -200,
+        20
+      ],
+      "id": "291464a3-7ec8-4702-8b0e-d654859b02e1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "calls_basic_information",
+          "mode": "list",
+          "cachedResultName": "calls_basic_information"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "call_code",
+              "condition": "LIKE",
+              "value": "={{ $json.call_code }}"
+            },
+            {
+              "column": "call_title",
+              "condition": "LIKE",
+              "value": "={{ $json.call_title }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        280,
+        -20
+      ],
+      "id": "81830f6a-7ec3-4971-8f76-cb7235557b26",
+      "name": "MySQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "YVMSvciBFRX5zwTd",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "feef0c1f-6f9c-49f8-8a8c-bfa643a4127c",
+              "name": "output",
+              "value": "=Information founded about call code '{{ $json.call_code }}' and title '{{ $json.call_title }}'.\\n\nFunding mechanism: {{ $json.funding_mechanism }}\\n\nCall programme: {{ $json.programme }}\\n\nOpening date: {{ $json.opening_date }}\\n\nNext deadline date: {{ $json.next_deadline_date }} \\n\nSubmission type: {{ $json.submission_type }}\\n\nBudget total: {{ $json.budget_total }}\\n\nType company: {{ $json.type_company }}\\n\nLocation: {{ $json.eligibility_region }}\\n\n\nMore information here:\\n\n<a href=\"{{ $json.call_href }}\" target=\"_blank\">{{ $json.call_href }}</a>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        680,
+        -80
+      ],
+      "id": "58d9bd0c-66ad-4460-b137-e9bf3dc976c1",
+      "name": "Response OK"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4c7af866-9509-4100-a4dc-ad72b3abee4a",
+              "name": "output",
+              "value": "=No information founded about the call with code '{{ $('Edit Fields').item.json.call_code }}' and title '{{ $('Edit Fields').item.json.call_title }}'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        680,
+        80
+      ],
+      "id": "c2fce977-b1fa-4fcd-9fa4-51b8958b8c80",
+      "name": "Response error"
+    },
+    {
+      "parameters": {
+        "content": "## Get basic information\n- Offers basic call information for a specific grant",
+        "height": 500,
+        "width": 1280
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -460,
+        -100
+      ],
+      "typeVersion": 1,
+      "id": "dc84e48a-9bf7-46d0-81b1-40bbe57ff33d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ecdfc145-90ee-4511-8307-02405abd1d4b",
+              "leftValue": "={{ $json.call_code }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6120ed48-ca8a-482d-ae39-db1489cea824",
+              "leftValue": "={{ $json.call_title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        20,
+        20
+      ],
+      "id": "b2a4e7a4-9f76-434f-872e-efba13c13a85",
+      "name": "code & title exists?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d60c0d29-0829-40af-b88e-5d522f488670",
+              "leftValue": "={{ $('MySQL') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "75925c59-3dd8-43d5-a04a-3ff15eb0b836",
+              "leftValue": "={{ $('MySQL').item.json.call_code }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        -20
+      ],
+      "id": "09f6f2db-832e-4d9a-b3fb-28f09efa48d0",
+      "name": "error?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4c7af866-9509-4100-a4dc-ad72b3abee4a",
+              "name": "output",
+              "value": "=Call code and call title must be passed to obtain call information.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        680,
+        240
+      ],
+      "id": "bab72cb6-2ca3-4b05-9f61-6552a781d9f3",
+      "name": "Response no inputs"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "code & title exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "code & title exists?": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response no inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "error?": {
+      "main": [
+        [
+          {
+            "node": "Response OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ecbd01f9-fbbd-43ea-9fba-b66a0d08f3e0",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "EuPi9JNGfwbScoFT",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

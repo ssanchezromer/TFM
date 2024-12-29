@@ -1,0 +1,828 @@
+{
+  "name": "Get company details",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "693f2dd4-fd87-4f7c-918b-01578e4b0ba6",
+              "name": "name",
+              "value": "={{ $json.data[0].display_name }}",
+              "type": "string"
+            },
+            {
+              "id": "3111a08a-0103-4ce2-8e8c-739d689c5a92",
+              "name": "employees",
+              "value": "={{ $json.data[0].employee_count }}",
+              "type": "number"
+            },
+            {
+              "id": "e7883af7-db54-416b-b365-7c33bcbc2350",
+              "name": "country",
+              "value": "={{ $json.data[0].location.country }}",
+              "type": "string"
+            },
+            {
+              "id": "b587873e-0226-40a6-8cfc-6be3eb6e138a",
+              "name": "continent",
+              "value": "={{ $json.data[0].location.continent }}",
+              "type": "string"
+            },
+            {
+              "id": "677f6eef-1e33-4451-99b9-4ade12951f50",
+              "name": "funding",
+              "value": "={{ $json.data[0].total_funding_raised }}",
+              "type": "string"
+            },
+            {
+              "id": "d6139b9a-ca11-4c8d-8e7b-d73503e81981",
+              "name": "location",
+              "value": "={{ $json.data[0].location.country }}, {{ $json.data[0].location.continent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1500,
+        -380
+      ],
+      "id": "dfcb8bcb-d3e8-4417-aad4-d73533b16b1d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.peopledatalabs.com/v5/company/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "d0aa75937b860ed4812326f610ab232f688372a06b4e5b627b95e881798f80f9"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "size",
+              "value": "1"
+            },
+            {
+              "name": "sql",
+              "value": "={{ \"SELECT * FROM company WHERE name='\"+$json.company_name+\"';\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        -180
+      ],
+      "id": "e614deba-53dd-4afb-a07e-5fcdec0da168",
+      "name": "HTTP Request (name)"
+    },
+    {
+      "parameters": {
+        "url": "https://api.peopledatalabs.com/v5/company/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "d0aa75937b860ed4812326f610ab232f688372a06b4e5b627b95e881798f80f9"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "size",
+              "value": "1"
+            },
+            {
+              "name": "sql",
+              "value": "={{ \"SELECT * FROM company WHERE website='\"+ $('Execute Workflow Trigger').item.json.company_url +\"';\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        -360
+      ],
+      "id": "873921bb-3cbf-42cf-a6ee-4a2f9f0e4c07",
+      "name": "HTTP Request (url)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        -180
+      ],
+      "id": "ac0162be-31f7-4909-891e-c3197ed0098e",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "693f2dd4-fd87-4f7c-918b-01578e4b0ba6",
+              "name": "name",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "3111a08a-0103-4ce2-8e8c-739d689c5a92",
+              "name": "employees",
+              "value": "=",
+              "type": "number"
+            },
+            {
+              "id": "e7883af7-db54-416b-b365-7c33bcbc2350",
+              "name": "country",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "b587873e-0226-40a6-8cfc-6be3eb6e138a",
+              "name": "continent",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "677f6eef-1e33-4451-99b9-4ade12951f50",
+              "name": "funding",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "a1820677-e836-4f13-b053-65d0357d8a82",
+              "name": "type_company",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "59e44180-f6bf-46a5-acd7-83be76722aaa",
+              "name": "location",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1500,
+        -120
+      ],
+      "id": "ebf5c03a-b3d2-473a-a08b-13f33f122dd8",
+      "name": "Empty response"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Loop over input items and add a new field called 'myNewField' to the JSON of each one\n\n\nfor item in _input.all():\n    num_employees = item.json.get(\"employees\", 0)\n    \n    # Clasificar según el número de empleados\n    if num_employees == 1:\n        item.json[\"type_company\"] = \"Self-Employed\"\n    elif 2 <= num_employees <= 10:\n        item.json[\"type_company\"] = \"Microenterprise\"\n    elif 11 <= num_employees <= 50:\n        item.json[\"type_company\"] = \"SME\"\n    elif 51 <= num_employees <= 250:\n        item.json[\"type_company\"] = \"Midcap\"\n    elif num_employees>250:\n        item.json[\"type_company\"] = \"Large Company\"\n    else:\n        item.json[\"type_company\"] = \"Other\"\n\n# Devolver la información actualizada\nreturn _input.all()"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        -380
+      ],
+      "id": "286c07b8-4515-4299-875d-898d85a36374",
+      "name": "Add type company"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "URL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "URL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "22e17080-8cb0-41bb-a71b-3d75d348f29f",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "NAME",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NAME"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c80ab00e-8e34-4930-9644-8f655bc8291c",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "CIF",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CIF"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        340,
+        -180
+      ],
+      "id": "06a945ae-f99e-4625-9847-4586b417de75",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be2ac3e6-475e-464b-a4cf-ee084f5fd0bf",
+              "name": "query",
+              "value": "={{ $json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        60,
+        -180
+      ],
+      "id": "17874949-275f-42b1-acc0-5ec7445e278b",
+      "name": "query"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "183be0a6-46d3-4296-812e-ee1710915770",
+              "name": "company_name",
+              "value": "={{ $('query').item.json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -180
+      ],
+      "id": "d26fe54a-6a56-4274-afaf-ff07d7b854d1",
+      "name": "Get query name"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "183be0a6-46d3-4296-812e-ee1710915770",
+              "name": "company_url",
+              "value": "={{ $('query').item.json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -360
+      ],
+      "id": "159f7377-0233-493b-83ed-2860752554a3",
+      "name": "Get query url"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "183be0a6-46d3-4296-812e-ee1710915770",
+              "name": "company_cif",
+              "value": "={{ $('query').item.json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        20
+      ],
+      "id": "d93b577a-755a-4547-bc46-45dda825e2df",
+      "name": "Get query CIF"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import re\n\n# Loop over input items and add a new field called 'myNewField' to the JSON of each one\nquery = _input.first().json[\"query\"]\n\n\ndef classify_input(text):\n    # Regex para detectar URLs\n    url_pattern = r'\\bhttps?://[^\\s]+|(?:\\w+\\.)+\\w+'\n    # Regex para detectar números CIF (formato simplificado)\n    cif_pattern = r'\\b[A-Za-z]?\\d{7,8}[A-Za-z]?\\b'\n  \n    url_matches = re.findall(url_pattern, query, re.IGNORECASE | re.DOTALL)\n    if url_matches:\n        return {\"output\": \"URL\"}\n    cif_matches = re.findall(cif_pattern, query, re.IGNORECASE | re.DOTALL)\n    if cif_matches:\n        return {\"output\": \"CIF\"}\n    else:\n        return {\"output\": \"NAME\"}\n\nreturn classify_input(query)"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        -180
+      ],
+      "id": "7a4420f2-e9c9-43c5-aa40-602af09abe45",
+      "name": "Query classifier"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/get-details-cif",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_cif\": \"{{ $json.company_cif }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        20
+      ],
+      "id": "9a7391d4-d69a-489d-8392-a06b6b9cf2f3",
+      "name": "HTTP Request (get name)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "07c88d51-8154-4a50-a435-7fcfe8f9793e",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "43bf306c-9e4c-45f2-98ec-1b09536e0286",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        20
+      ],
+      "id": "7d514706-0132-4caa-ba5d-43e55e639f0d",
+      "name": "Check status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e16306b3-887a-42e8-8f64-f2ee08d1e56b",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        -280
+      ],
+      "id": "b8ae765d-b3ad-4406-be6c-8b16236b1d07",
+      "name": "NOT ERROR?"
+    },
+    {
+      "parameters": {
+        "content": "## Get company details\n- Based on CIF, company name or company domain gets information about the company type and location",
+        "height": 620,
+        "width": 2140
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -180,
+        -420
+      ],
+      "typeVersion": 1,
+      "id": "0505a146-d628-449b-b529-4bfa1c840d16",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e48d65e1-955a-43c9-9695-1f156a0e167c",
+              "name": "output",
+              "value": "=Company details:\n- Company name: {{ $json.name }}\n- Company eligibility region: {{ $json.location }}\n- Company type: {{ $json.type_company }}\n- Number employees: {{ $json.employees }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1820,
+        -220
+      ],
+      "id": "4285337b-b982-4774-acb8-98649d1ebe5a",
+      "name": "Final response"
+    }
+  ],
+  "pinData": {
+    "HTTP Request (name)": [
+      {
+        "json": {
+          "status": 200,
+          "data": [
+            {
+              "name": "7experts",
+              "display_name": "7Experts",
+              "size": "51-200",
+              "employee_count": 51,
+              "id": "UWt8zKlWkiTygMo32ORHagli6tu1",
+              "founded": 2001,
+              "industry": "management consulting",
+              "naics": null,
+              "sic": null,
+              "location": {
+                "name": "sant cugat del valles, catalonia, spain",
+                "locality": "sant cugat del valles",
+                "region": "catalonia",
+                "metro": null,
+                "country": "spain",
+                "continent": "europe",
+                "street_address": null,
+                "address_line_2": null,
+                "postal_code": null,
+                "geo": "41.47,2.08"
+              },
+              "linkedin_id": "35672689",
+              "linkedin_url": "linkedin.com/company/7experts",
+              "linkedin_slug": "7experts",
+              "facebook_url": null,
+              "twitter_url": null,
+              "profiles": [
+                "crunchbase.com/organization/7experts",
+                "linkedin.com/company/35672689",
+                "linkedin.com/company/7experts"
+              ],
+              "website": "7experts.com",
+              "ticker": null,
+              "gics_sector": null,
+              "mic_exchange": null,
+              "type": "private",
+              "summary": "7experts o una nueva manera de hacer consultoría\nen 2019, redefinimos un nuevo modelo de consultoría para ofrecer un enfoque fresco y efectivo con dos pilares fundamentales: el expertise de nuestro equipo y soluciones tecnológicas de negocio que nos acompañen en nuestros proyectos.\nhoy, brindamos soluciones digitales en todas nuestras áreas de negocio de forma colaborativa con nuestros clientes de manera transparente donde la eficiencia es nuestro gran diferencial. nos sentimos orgullosos del camino recorrido y hoy podemos afirmar felices:\nque nos movemos como pez en el agua en las áreas de i+d+i, finanzas, recursos humanos, operaciones y legal.\nque marcamos un antes y un después en el día a día de nuestros clientes y de sus equipos.\nque nos encanta nuestro trabajo y se nota en los resultados.\nque nuestro equipo es simplemente genial: conocimiento técnico, tecnología, empatía y muchas ganas de ofrecer soluciones a los más de 450 clientes satisfechos que nos conocen y que saben lo bueno",
+              "tags": null,
+              "headline": "Solucionamos tus problemas operativos 😃",
+              "alternative_names": [],
+              "alternative_domains": [],
+              "affiliated_profiles": [],
+              "total_funding_raised": null,
+              "latest_funding_stage": null,
+              "last_funding_date": null,
+              "number_funding_rounds": null,
+              "funding_stages": [],
+              "employee_count_by_country": {
+                "france": 2,
+                "spain": 49
+              },
+              "dataset_version": "v28.2"
+            }
+          ],
+          "scroll_token": "51$14.683418$3507828",
+          "total": 1,
+          "dataset_version": "28.2"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Add type company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (name)": {
+      "main": [
+        [
+          {
+            "node": "NOT ERROR?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (url)": {
+      "main": [
+        [
+          {
+            "node": "NOT ERROR?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get query url",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get query name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get query CIF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "query": {
+      "main": [
+        [
+          {
+            "node": "Query classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get query name": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (name)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get query url": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (url)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get query CIF": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (get name)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query classifier": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (get name)": {
+      "main": [
+        [
+          {
+            "node": "Check status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check status": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (name)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Empty response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NOT ERROR?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Empty response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Empty response": {
+      "main": [
+        [
+          {
+            "node": "Final response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add type company": {
+      "main": [
+        [
+          {
+            "node": "Final response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c11a44b4-e7b3-44a0-b6f2-22cc92208149",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "FwAZeP4Berwnv4qz",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

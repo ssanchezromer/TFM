@@ -24,7 +24,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -280,
+        0,
         -40
       ],
       "id": "16f51d3b-b7ad-4aea-b3cd-8062eff8e016",
@@ -32,85 +32,22 @@
     },
     {
       "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryManager",
-      "typeVersion": 1.1,
-      "position": [
-        -100,
-        -40
-      ],
-      "id": "b06d4d7e-5bb5-469c-b330-8d02d8a739d2",
-      "name": "Chat Memory Manager"
-    },
-    {
-      "parameters": {
-        "contextWindowLength": 10
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.3,
-      "position": [
-        -80,
-        140
-      ],
-      "id": "4bc98e4e-3a13-463c-920f-ce08b3cd0e87",
-      "name": "Postgres Chat Memory",
-      "credentials": {
-        "postgres": {
-          "id": "sZqBM43fLd9wJOda",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "aggregate": "aggregateAllItemData",
-        "destinationFieldName": "messages",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.aggregate",
-      "typeVersion": 1,
-      "position": [
-        200,
-        -40
-      ],
-      "id": "9ce7fd6e-4862-4c92-8d05-e09a0472e88f",
-      "name": "Aggregate"
-    },
-    {
-      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "=You are a data analyst at a company. You are interacting with a user who is asking you questions about the company's database.\n\nBased on the table schema available in the tool (get_schema), retrieve the schema details first, and then write a SQL query to answer the user's question. Take the conversation history into account.\n\n    Conversation History: {{ $('Mapping').item.json.chat_history }}\n\n    Write only the SQL query and nothing else. Do not wrap the SQL query in any other text, not even backticks. \n\n    For example:\n    Question: how many calls have the status open?\n    SQL Query: SELECT COUNT(*) as callsOpened FROM calls_basic_information WHERE LOWER(status) LIKE '%open%';\n    Question: Give me the call with the highest budget\n    SQL Query: SELECT * FROM calls_basic_information ORDER BY budget_total DESC LIMIT 1;\n    Question: Are there any calls with topic description based on contamination?\n    SQL Query: SELECT * FROM calls_description_information WHERE LOWER(topic_description) LIKE '%contamination%';\n    Question: Give me more information about the call we are discussing. Ex. call_code 'HORIZON-CL3-2024-SSRI-01-02' and call_title 'Accelerating uptake through open proposals for advanced SME innovation'\n    SQL Query: SELECT file_text, file_summary FROM calls_files_information WHERE call_id_code='HORIZON-CL3-2024-SSRI-01-02' and call_title='Accelerating uptake through open proposals for advanced SME innovation';\n\n    Your turn:\n\n    Question: {{ $json.chatInput }}\n    SQL Query:"
+          "systemMessage": "=You are a data analyst at a company. You are interacting with a user who is asking you questions about the company's database.\n\nBased on the table schema available in the tool **get_schema**, retrieve the schema details first, and then write a SQL query to answer the user's question. \n\n### Important Instructions\n1. **Use Only the Following Tables**:\n   - **calls_basic_information**: Contains general information about calls, such as:\n      - Code of the call (call_code)\n      - Title of the call (call_title)\n      - URL of the call (call_url).\n      - Funding mechanism (funding_mechanism): can be Call for proposal or Cascade funding.\n      - Opening and closing dates (opening_date, next_deadline_date).\n      - Submission type (submission_type).\n      - Current status (call_state): can be open, forthcoming, or closed.\n      - Programme type (programme).\n      - Action type (type_of_action).\n      - Total budget (budget_total).\n      - Location (eligibility_region).\n      - Target company type (type_company).\n      - More information about the call (extra_information)\n\n   - **calls_budget_information**: Provides detailed budget information for a specific call_code and call_title, including:\n      - Code of the call (call_code)\n      - Title of the call (call_title)\n      - Budget topics (budget_topic).\n      - Budget amounts (budget_amount).\n      - Budget stages (budget_stages).\n      - Budget opening dates (budget_opening_date).\n      - Budget deadlines (budget_deadline).\n  \n  - **calls_description_information**: \n    - Contains descriptive fields that can answer user questions about:\n      - Code of the call (call_code)\n      - Title of the call (call_title)\n      - Topic description (topic_description).\n      - Topic destination (topic_destination).\n      - Additional information (extra_information).\n    - Use this table for queries about specific calls or to find related topics. For example:\n      SELECT * \n      FROM calls_description_information \n      WHERE LOWER(topic_description) LIKE '%contamination%' \n         OR LOWER(topic_destination) LIKE '%contamination%' \n         OR LOWER(extra_information) LIKE '%contamination%';\n\n2. **Query Construction**:\n   - **Ensure that the fields used in the SQL query align with the schema** retrieved using the tool **get_schema**.  \n   - Whenever applicable, use the **`LIKE` operator** to handle partial matches or case-insensitive searches.  \n   - Write only the SQL query and nothing else. Do not wrap the SQL query in any other text, not even backticks.\n\n3. **Output Only the SQL Query**:\n   - Write only the SQL query, with no additional text or formatting.\n\n### Examples:\n- **Question**: How many calls have the status open?  \n  **SQL Query**: `SELECT COUNT(*) as callsOpened FROM calls_basic_information WHERE LOWER(call_state) LIKE '%open%';`  \n- **Question**: Give me the call with the highest budget  \n  **SQL Query**: `SELECT * FROM calls_basic_information ORDER BY budget_total DESC LIMIT 1;`  \n- **Question**: Are there any calls with topic description based on contamination?  \n  **SQL Query**: `SELECT * FROM calls_description_information WHERE LOWER(topic_description) LIKE '%contamination%';`  \n- **Question**: Give me more information about the call we are discussing. Ex. call_code 'HORIZON-CL3-2024-SSRI-01-02' and call_title 'Accelerating uptake through open proposals for advanced SME innovation'  \n  **SQL Query**: `SELECT file_text, file_summary FROM calls_files_information WHERE call_code LIKE '%HORIZON-CL3-2024-SSRI-01-02%' AND call_title LIKE 'Accelerating uptake through open proposals for advanced SME innovation%';`  \n\nYour turn:  \n\n**Question**: {{ $json.chatInput }}  \n**SQL Query**:  "
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        560,
+        200,
         -40
       ],
       "id": "6372fadc-1547-471b-b6ba-de141117a9f7",
-      "name": "Mysql query"
-    },
-    {
-      "parameters": {
-        "model": "llama3.2:3b-instruct-q3_K_L",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        520,
-        200
-      ],
-      "id": "0cbb3646-bda4-4026-9101-31f16674161f",
-      "name": "Ollama Chat Model",
-      "credentials": {
-        "ollamaApi": {
-          "id": "eyEBAqW1xH6h7KLn",
-          "name": "Ollama account"
-        }
-      }
+      "name": "Mysql query",
+      "executeOnce": true,
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -121,7 +58,7 @@
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 2.4,
       "position": [
-        1100,
+        1240,
         -40
       ],
       "id": "8f328b83-3bd5-45fd-89af-b26270a0f9ba",
@@ -137,37 +74,8 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "bc15166f-1281-4b35-9778-20e4b950f86a",
-              "name": "=chat_history",
-              "value": "={{ $json.messages[0].messages.toJsonString() }}",
-              "type": "string"
-            },
-            {
-              "id": "61e2ba8f-1360-411e-a409-05cdcd8439a5",
-              "name": "chatInput",
-              "value": "={{ $('Edit Fields').item.json.chatInput }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        360,
-        -40
-      ],
-      "id": "d4ce33eb-d3a2-4271-b780-1639cdd468c5",
-      "name": "Mapping"
-    },
-    {
-      "parameters": {
         "name": "get_schema",
-        "description": "Call this tool to get a mysql database schema.",
+        "description": "The get_schema tool retrieves the schema of a MySQL database. It provides the structure of all tables, including table names, column names, data types, and relationships, enabling tools and workflows to understand the database layout for effective query generation.",
         "workflowId": {
           "__rl": true,
           "value": "DLnGtpP6QA5rLqef",
@@ -178,7 +86,7 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 1.3,
       "position": [
-        780,
+        480,
         200
       ],
       "id": "f3ee323b-68e2-4155-8d64-6d321db259c0",
@@ -189,7 +97,7 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -480,
+        -180,
         -40
       ],
       "id": "5039d773-46ca-4354-9a82-a19e92262577",
@@ -203,11 +111,188 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        900,
+        540,
         -40
       ],
       "id": "97013c67-5627-479f-979f-6448e34c46f2",
       "name": "Extract SQL secure"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        200
+      ],
+      "id": "e1cff4bb-0f58-48f0-abbb-57bc98ffd9d1",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=SQL Query to correct: {{ $json.output }}",
+        "options": {
+          "systemMessage": "=You are an advanced SQL assistant specialized in analyzing and correcting SQL queries. Your role is to ensure the provided SQL query aligns with the database schema.\n\n## Inputs:\n1. SQL Query: A raw SQL query that may contain errors in table names, field names, or relationships.\n2. Database Schema: The schema provided via the get_schema tool, which outlines the exact structure of the database, including table names, field names, and their relationships.\n\n## Instructions:\n- Use the tool get_schema to retrieve the schema to verify the accuracy of the SQL query.\n- If there are discrepancies (e.g., incorrect table names, field names, or syntax), correct them to match the schema.\n- Ensure that:\n  - All table names and column names exist in the schema.\n  - Relationships between tables are respected.\n  - The query maintains the intended functionality as closely as possible.\n- If the query contains logic that cannot be applied to the current schema, explain the issue clearly and suggest a corrected version based on the schema.\n- **\"Always use `LIKE` with wildcards (`%`) instead of `=` whenever possible in SQL conditions to allow partial matches. For example, replace `LOWER(call_state) = 'open'` with `LOWER(call_state) LIKE '%open%'`.\"**\n\n## Examples:\n**Input SQL Query**:\nSELECT * FROM calls_informations WHERE start_date >= '2024-01-01';\n**Corrected SQL Query**:\nSELECT * FROM calls_basic_information WHERE opening_date >= '2024-01-01';\n\n**Input SQL Query**:\nSELECT * FROM calls_informations WHERE eligibility_region = 'Spain, Europe';\n**Corrected SQL Query**:\nSELECT * FROM calls_basic_information WHERE LOWER(eligibility_region) LIKE '%Spain%' OR LOWER(eligibility_region) LIKE '%Europe%'\n\n\n**Output Format**:\n- Provide only the corrected SQL query, without any explanation or extra text.\n- If the query is valid and no changes are needed, return it as is.\n\nYour turn!\n\nInput SQL Query:\n{{ $json.output }}\nCorrected SQL Query:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        740,
+        -40
+      ],
+      "id": "9d41f429-c50c-4e89-b226-e5972167b7c7",
+      "name": "SQL correct",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {
+          "numCtx": 3000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        180,
+        200
+      ],
+      "id": "0cbb3646-bda4-4026-9101-31f16674161f",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {
+          "numCtx": 3000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        760,
+        200
+      ],
+      "id": "51d6263b-811e-4a15-a438-20bebdf94451",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "get_schema",
+        "description": "The get_schema tool retrieves the schema of a MySQL database. It provides the structure of all tables, including table names, column names, data types, and relationships, enabling tools and workflows to understand the database layout for effective query generation.",
+        "workflowId": {
+          "__rl": true,
+          "value": "DLnGtpP6QA5rLqef",
+          "mode": "list",
+          "cachedResultName": "Get schema"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        920,
+        200
+      ],
+      "id": "ea05e2e5-d8a8-4796-bfde-ed8985c6a0bb",
+      "name": "Get Schema1"
+    },
+    {
+      "parameters": {
+        "content": "## Search SQL\n",
+        "height": 540,
+        "width": 1660
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        -180
+      ],
+      "typeVersion": 1,
+      "id": "34fc3ba1-88a1-4c2c-b282-5bb2cc562af2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## First SQL query extract\n",
+        "height": 460,
+        "width": 540,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        140,
+        -120
+      ],
+      "typeVersion": 1,
+      "id": "7b604153-774e-4923-a211-8582a3be82c1",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import re\n# Loop over input items and add a new field called 'myNewField' to the JSON of each one\nsql = _input.first().json[\"output\"]\n\n# Regular expression pattern\npattern = r\"SELECT\\s.*?;\"\n\n# Extracting the query\nmatches = re.findall(pattern, sql, re.IGNORECASE | re.DOTALL)\nif matches:\n  sql = matches[0]  # Assuming there's only one SELECT query\n  if \"INSERT\" in sql or \"DELETE\" in sql or \"UPDATE\" in sql or \"ALTER\" in sql or \"CREATE\" in sql:\n    return {\"output\": None}\n   \nelse:\n    print(\"No valid SELECT query found.\")\n\nreturn {\"output\": sql}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        -40
+      ],
+      "id": "8ee9111e-f176-4e3c-ad92-46a3a9196bac",
+      "name": "Extract SQL"
+    },
+    {
+      "parameters": {
+        "content": "## SQL correct format\n",
+        "height": 460,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        700,
+        -120
+      ],
+      "typeVersion": 1,
+      "id": "92447762-89f7-4903-bba8-c34db4b1c484",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Execute query\n",
+        "height": 460,
+        "width": 200,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1200,
+        -120
+      ],
+      "typeVersion": 1,
+      "id": "16f35944-c702-4233-98a3-dd01629e9835",
+      "name": "Sticky Note3"
     }
   ],
   "pinData": {},
@@ -216,52 +301,8 @@
       "main": [
         [
           {
-            "node": "Chat Memory Manager",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Chat Memory Manager",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Chat Memory Manager": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Aggregate": {
-      "main": [
-        [
-          {
-            "node": "Mapping",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ollama Chat Model": {
-      "ai_languageModel": [
-        [
-          {
             "node": "Mysql query",
-            "type": "ai_languageModel",
+            "type": "main",
             "index": 0
           }
         ]
@@ -281,17 +322,6 @@
     "MySQL": {
       "main": [
         []
-      ]
-    },
-    "Mapping": {
-      "main": [
-        [
-          {
-            "node": "Mysql query",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     },
     "Get Schema": {
@@ -320,6 +350,72 @@
       "main": [
         [
           {
+            "node": "SQL correct",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Mysql query",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQL correct": {
+      "main": [
+        [
+          {
+            "node": "Extract SQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mysql query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SQL correct",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Schema1": {
+      "ai_tool": [
+        [
+          {
+            "node": "SQL correct",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract SQL": {
+      "main": [
+        [
+          {
             "node": "MySQL",
             "type": "main",
             "index": 0
@@ -330,9 +426,10 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "280c2b14-571e-4996-89a1-2a134266df2c",
+  "versionId": "7e3d4e36-3881-4e66-be90-a387aee41d77",
   "meta": {
     "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
   },

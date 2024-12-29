@@ -3,94 +3,18 @@
   "nodes": [
     {
       "parameters": {
-        "model": "llama3.2:3b-instruct-q3_K_L",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        100,
-        -180
-      ],
-      "id": "d3da5964-84b0-48cd-b742-e551eb409991",
-      "name": "Ollama Chat Model1",
-      "credentials": {
-        "ollamaApi": {
-          "id": "eyEBAqW1xH6h7KLn",
-          "name": "Ollama account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "contextWindowLength": 20
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.3,
-      "position": [
-        280,
-        -180
-      ],
-      "id": "fba18360-2adb-43ab-9dd4-4b2ebc546608",
-      "name": "Postgres Chat Memory1",
-      "credentials": {
-        "postgres": {
-          "id": "sZqBM43fLd9wJOda",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=User's question:  {{ $json.chatInput }}",
-        "options": {
-          "systemMessage": "=Goal:\nYou are an expert in analyzing conversations about grants and funding calls. Your task is to:\n\n1. Identify whether the chat history references a specific grant or funding call.\n2. Extract the call_code and call_title of the mentioned grant.\n3. Analyze both the user's latest input and the conversation history:\n  - Determine if there is a clear question related to grants or funding calls in the latest input or the prior context.\n  - Include this question in the question field of the output JSON.\n  - If no clear question is detected, leave the question field blank (\"\").\n\n\nSteps:\n\n1. Review the conversation history and the user's latest input to extract context about grants or funding calls.\n2. Identify if the user has referenced a specific grant or funding call by detecting the presence of call_code or call_title.\n3. Search for a question:\n  - First, check the user's latest input for a question.\n  - If no explicit question is found in the latest input, scan the conversation history for the most relevant and recent question.\n4. Populate the question field with the identified question, or leave it blank if no question is found.\n\nImportant:\n\nIf you can identify a specific grant or funding call, provide the following JSON format:\n{\n  \"call_code\": \"<call_code>\",\n  \"call_title\": \"<call_title>\",\n  \"question\": \"<question>\"\n}\n\nIf no specific grant or funding call can be identified, respond with:\n{\n  \"call_code\": \"\",\n  \"call_title\": \"\",\n  \"question\": \"\"\n}\n\n\n"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
-      "position": [
-        200,
-        -400
-      ],
-      "id": "49fcea78-7dfa-428a-bdd6-1bcdf2aed07d",
-      "name": "AI Agent"
-    },
-    {
-      "parameters": {
-        "language": "python",
-        "pythonCode": "import json\nimport re\n\n# output = json.loads(_input.first().json[\"output\"])\noutput = str(_input.first().json[\"output\"])\npattern = r'\\{\\s*\"call_code\":\\s*\".*?\",\\s*\"call_title\":\\s*\".*?\",\\s*\"question\":\\s*\".*?\"\\s*\\}'\n\n\nmatch = re.search(pattern, output)\n\nif match:\n  json_data = json.loads(match.group())  # Convertir a diccionario\n  if \"call_code\" in json_data and \"call_title\" in json_data and \"question\" in json_data:\n    call_code = str(json_data[\"call_code\"])\n    call_title = str(json_data[\"call_title\"])\n    question = str(json_data[\"question\"])\nelse:\n  print(\"No se encontró un JSON válido en la respuesta.\")\n  call_code = \"\"\n  call_title = \"\"\n  question = \"\"\n\nmissing = \"\"\n\nif call_title == \"\" and call_code == \"\" and question == \"\":\n  return {\n    \"error\" : \"500\",\n    \"call_code\" : call_code,\n    \"call_title\" : call_title,\n    \"question\" : question\n  }\nif call_code == \"\" and call_title ==\"\":\n  missing = \"We couldn't identify a specific grant or subsidy related to your inquiry. If you could provide more details, such as the grant's title or code, we can help refine the search.\"\nif call_code != \"\" and call_title !=\"\":\n  missing = \"\"\nif call_code == \"\" and call_title !=\"\":\n  missing = \"We identified the title of a specific grant (\" + call_title + \"), but we couldn't determine its code. If you'd like, you can provide additional details, such as the grant's name, to narrow down the results.\"\nif call_code != \"\" and call_title ==\"\":\n  missing = \"We identified the code of a specific grant (\" + call_code + \"), but we couldn't determine its title. If you'd like, you can provide additional details, such as the grant's name, to narrow down the results.\"\n\nif question == \"\":\n  missing += \"\\nWe don't identify the question. Please, provide more details about it.\"\n\nreturn {\n  \"error\" : missing,\n  \"call_code\" :  call_code,\n  \"call_title\" : call_title,\n  \"question\" : question\n}"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        520,
-        -400
-      ],
-      "id": "41e977cc-73f9-4474-813e-235a9c26b893",
-      "name": "Code & Title"
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
               "id": "0c7d48bb-081f-4844-b4fb-2861c4c14cc4",
               "name": "call_code",
-              "value": "={{ $json.call_code }}",
+              "value": "=%{{ $json.output.call_code }}%",
               "type": "string"
             },
             {
               "id": "b5a681f7-783d-408b-ad2e-48b780dfe1e8",
               "name": "call_title",
-              "value": "={{ $json.call_title }}",
-              "type": "string"
-            },
-            {
-              "id": "b64dc4c5-9cfc-41c3-becb-cfb72b48aae2",
-              "name": "question",
-              "value": "={{ $json.question }}",
+              "value": "=%{{ $json.output.call_title }}%",
               "type": "string"
             }
           ]
@@ -100,7 +24,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        920,
+        840,
         -500
       ],
       "id": "820c792f-ae2b-47c4-9aff-9834d9291cd3",
@@ -118,7 +42,7 @@
           "conditions": [
             {
               "id": "5445d1cc-8d2a-4f18-8d7e-204595871a61",
-              "leftValue": "={{ $('Get all file_id no call_title') }}",
+              "leftValue": "={{ $('Get all file_id') }}",
               "rightValue": "",
               "operator": {
                 "type": "object",
@@ -128,7 +52,7 @@
             },
             {
               "id": "843123f2-a34b-46ec-a256-cabc4bd0e8c3",
-              "leftValue": "={{ $('Get all file_id no call_title').item }}",
+              "leftValue": "={{ $('Get all file_id').item.json }}",
               "rightValue": "",
               "operator": {
                 "type": "object",
@@ -144,55 +68,32 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1260,
-        -500
+        1480,
+        -580
       ],
       "id": "ed5e6f41-2b07-4426-9129-c8b7ca88d677",
       "name": "Not empty?"
     },
     {
       "parameters": {
-        "functionCode": "return [\n  {\n    json: {\n      file_ids: items.map(item => item.json.file_id).join(', '),\n    },\n  }\n];"
+        "functionCode": "return [\n  {\n    json: {\n      file_ids: items.map(item => item.json.file_id).join(','),\n    },\n  }\n];"
       },
       "name": "Create an array of objects",
       "type": "n8n-nodes-base.function",
       "position": [
-        1500,
+        1700,
         -620
       ],
       "typeVersion": 1,
       "id": "07ad2833-cacb-4f14-97bb-3b1eb578ae15"
     },
     {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "503f3cd6-5e76-424e-84cc-43a80dc3914d",
-              "name": "output",
-              "value": "={{ $json.error }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1940,
-        -220
-      ],
-      "id": "01e3c98f-c9a6-4f24-9230-394b6e737042",
-      "name": "Need more data"
-    },
-    {
       "parameters": {},
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -140,
-        -400
+        640,
+        -500
       ],
       "id": "1bf93c3e-86b2-4030-ade9-beaf6adaa143",
       "name": "Execute Workflow Trigger"
@@ -202,49 +103,8 @@
         "assignments": {
           "assignments": [
             {
-              "id": "91266cf5-ac91-40f7-b7b5-b80a0c496972",
-              "name": "chatInput",
-              "value": "={{ $json.chatInput }}",
-              "type": "string"
-            },
-            {
-              "id": "3ae3c945-a080-461a-a44f-8cae5e420c9e",
-              "name": "sessionId",
-              "value": "={{ $json.sessionId}}",
-              "type": "string"
-            },
-            {
-              "id": "3b6afb85-8e06-44d5-9ecc-385bc6bb4138",
-              "name": "query",
-              "value": "={{ $json.query }}",
-              "type": "string"
-            },
-            {
-              "id": "015f4a82-43b7-4793-994a-5652ff5ef989",
-              "name": "limit",
-              "value": "={{ $json.limit }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        40,
-        -400
-      ],
-      "id": "1e215eca-a5b0-452f-a6ff-523ffbad91cf",
-      "name": "Edit Field"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
               "id": "1dac354a-1808-43ae-a1f5-e06a30943ad8",
-              "name": "output",
+              "name": "file_ids",
               "value": "",
               "type": "string"
             }
@@ -255,84 +115,16 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1940,
-        -420
+        1700,
+        -380
       ],
       "id": "d2bc5e70-a9e8-4024-adf7-af52341ec6cb",
       "name": "Blank response"
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "http://host.docker.internal:5000/get-points",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"question\": \"{{ $json.question}}\",\n  \"field_id\": [{{ $json.file_ids }}],\n  \"limit\": {{ $json.limit }}\n}",
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "json"
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1940,
-        -620
-      ],
-      "id": "9dfe3068-feb9-425b-9edd-85e0b9106ec5",
-      "name": "HTTP Request (get points)"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "2fa605ac-042d-4941-b5ac-06b8be84257c",
-              "leftValue": "={{ $json.error }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "exists",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "600481e5-3738-4d77-a31e-c9f8803e1f9f",
-              "leftValue": "={{ $json.error }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        660,
-        -400
-      ],
-      "id": "b6872350-e822-4279-9b82-7aa3e5be0306",
-      "name": "All data?"
-    },
-    {
-      "parameters": {
         "operation": "executeQuery",
-        "query": "Select DISTINCT(file_id), file_title FROM calls_urls WHERE call_code LIKE '%$1%' AND call_title LIKE '%$2%'",
+        "query": "Select DISTINCT(file_id), file_title FROM calls_urls WHERE call_code LIKE $1 AND call_title LIKE $2;",
         "options": {
           "queryReplacement": "={{ $json.call_code }},{{ $json.call_title }}"
         }
@@ -340,8 +132,8 @@
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 2.4,
       "position": [
-        1080,
-        -500
+        1280,
+        -580
       ],
       "id": "1dd0ddb1-61ef-41d9-b336-d940442e845a",
       "name": "Get all file_id",
@@ -355,102 +147,80 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "content": "## Get file ids\n- Get file identifiers for a specific call",
+        "height": 420,
+        "width": 1260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        580,
+        -640
+      ],
+      "typeVersion": 1,
+      "id": "d39c09cd-5bfe-43de-ba30-6a0d5de5204d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
             {
-              "id": "97035e63-6999-458f-82d9-6767aeea8c38",
-              "name": "file_ids",
-              "value": "={{ $json.file_ids }}",
-              "type": "string"
+              "id": "70ad3e40-04d7-4f3f-b883-558a110a42c8",
+              "leftValue": "={{ $json.call_code }}",
+              "rightValue": "%%",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             },
             {
-              "id": "ff35ba2f-db76-48ca-9e32-bd3bccbaf882",
-              "name": "question",
-              "value": "={{ $('Code & Title').first().json.question }}",
-              "type": "string"
-            },
-            {
-              "id": "b3518f20-f7ec-4698-8c67-2b5ad3cecb18",
-              "name": "limit",
-              "value": "={{ $('Edit Field').item.json.limit }}",
-              "type": "string"
+              "id": "89f4104f-ae8d-4d50-9b53-80782b217ea0",
+              "leftValue": "={{ $json.call_title }}",
+              "rightValue": "%%",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
       "position": [
-        1720,
-        -620
+        1020,
+        -500
       ],
-      "id": "dbcf21ce-638d-4833-a9da-c06a933f7665",
-      "name": "file_ids, query and limits"
+      "id": "43012cfe-de21-4b76-8fd3-efb17bf544dc",
+      "name": "data?"
     }
   ],
   "pinData": {
     "Execute Workflow Trigger": [
       {
         "json": {
-          "query": "",
-          "chatInput": "Identify the call code and call title for this call",
-          "sessionId": "d6ee663e-7d98-4e4e-babc-f152b7992c07 - My company is in Europe. How many grants are available for my company?",
-          "limit": 3
+          "output": {
+            "call_code": "CEF-DIG-2024-EUROQCI-WORKS",
+            "call_title": "EUROQCI Works: Digital Call"
+          }
         }
       }
     ]
   },
   "connections": {
-    "Ollama Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Postgres Chat Memory1": {
-      "ai_memory": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Code & Title",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code & Title": {
-      "main": [
-        [
-          {
-            "node": "All data?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "call code & call title": {
       "main": [
         [
           {
-            "node": "Get all file_id",
+            "node": "data?",
             "type": "main",
             "index": 0
           }
@@ -477,49 +247,14 @@
     },
     "Create an array of objects": {
       "main": [
-        [
-          {
-            "node": "file_ids, query and limits",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Execute Workflow Trigger": {
       "main": [
         [
           {
-            "node": "Edit Field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Field": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "All data?": {
-      "main": [
-        [
-          {
             "node": "call code & call title",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Need more data",
             "type": "main",
             "index": 0
           }
@@ -537,11 +272,18 @@
         ]
       ]
     },
-    "file_ids, query and limits": {
+    "data?": {
       "main": [
         [
           {
-            "node": "HTTP Request (get points)",
+            "node": "Get all file_id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Blank response",
             "type": "main",
             "index": 0
           }
@@ -551,9 +293,10 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "2e0e36e5-8d24-43bb-9446-231c971d1dab",
+  "versionId": "5787c8f5-3b94-48a3-b5bc-556e49072585",
   "meta": {
     "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
   },

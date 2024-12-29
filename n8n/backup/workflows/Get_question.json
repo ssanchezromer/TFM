@@ -1,0 +1,284 @@
+{
+  "name": "Get question",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=### Goal:\nThis agent is designed to identify if a clear question is present in the user's input or conversation history. If no explicit question is found but the input implies a request, the agent should reformulate it into a well-defined question, **always related to calls, grants, proposals, and funding opportunities**.\n\n### Steps:\n\n1. Analyze the user input and/or the conversation context.\n2. Determine if the input contains a well-defined question related to calls, funding opportunities, eligibility, or grants.\n3. If a question is present, return it as-is.\n4. If no explicit question is found but the input implies a request, reformulate it into a clear and concise question focused on grants, calls, funding, eligibility criteria, etc.\n\n### Output format:\n\nIf you can identify a question, provide the following JSON format:\n{\n  \"question\": \"<question>\"\n}\n\nIf no specific question can be identified, respond with:\n{\n  \"question\": \"\"\n}\n\n### Important Notes:\n\n- Reformulate ambiguous or implicit requests into precise questions whenever possible.\n- Always ensure the question is directly related to calls, funding, grants, eligibility criteria, deadlines, or proposals.\n- Avoid fabricating questions if the input lacks meaningful context.\n- Only respond with a valid JSON response.\n\n### Example Inputs and Outputs:\n\n1. Input: \"What is the deadline for this call?\"\nOutput:\n{\n  \"question\": \"What is the deadline for this call?\"\n}\n\n2. Input: \"I need information about the opening date and the budget.\"\nOutput:\n{\n  \"question\": \"What are the opening date and the budget for this call?\"\n}\n3. Input: \"Tell me something interesting about this call.\"\nOutput:\n{\n  \"question\": \"Could you give me some information about the call we are speaking?\"\n}\n4. Input: \"Tell me a joke!\"\nOutput:\n{\n  \"question\": \"\"\n}\n\nYour turn!\n\nInput: \"{{ $json.chatInput }}\"\nOutput:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        220,
+        -300
+      ],
+      "id": "f8f23833-2dbb-40db-aa27-a4329b53f2b0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -400
+      ],
+      "id": "2df18bbc-dff9-49a1-975f-97a7a6eb951f",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91266cf5-ac91-40f7-b7b5-b80a0c496972",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3ae3c945-a080-461a-a44f-8cae5e420c9e",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -400
+      ],
+      "id": "9c8b385f-4f0e-40ea-9e89-694ec1f26980",
+      "name": "Edit Field"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -120
+      ],
+      "id": "c0ac19b1-2873-412b-aa69-9d3ec43b2884",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {
+          "numCtx": 2048
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -120
+      ],
+      "id": "3456461c-b3b9-4bbe-92c2-62e12e734cb4",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import json\nimport re\n\n# output = json.loads(_input.first().json[\"output\"])\noutput = str(_input.first().json[\"output\"])\npattern = r'\\{\\s*\"question\":\\s*\".*?\"\\s*\\}'\n\n\nmatch = re.search(pattern, output)\n\nquestion = \"\"\n\nif match:\n  json_data = json.loads(match.group())  # Convertir a diccionario\n  if \"question\" in json_data:\n    question = str(json_data[\"question\"])\n\nreturn {\n  \"chatInput\" : question\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -300
+      ],
+      "id": "cab79550-15c2-4a6a-bdab-71727b3496e5",
+      "name": "Question"
+    },
+    {
+      "parameters": {
+        "content": "## Get question\n- Get a clear question reformulate or empty\n- Output is a JSON with chatInput",
+        "height": 520,
+        "width": 1020
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -340,
+        -500
+      ],
+      "typeVersion": 1,
+      "id": "c502fe52-b779-406d-9754-9b144ccc2efa",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "05b38f5a-5fbf-4f57-930b-2b75dbefd7e5",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -460
+      ],
+      "id": "3b48dd4b-7559-4fe2-a1c4-f12bec111d1d",
+      "name": "Output"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "58772915-cf1c-45c2-b20e-7fd3899d5887",
+              "leftValue": "={{ $json.fix_query }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        60,
+        -400
+      ],
+      "id": "8a20e216-abf4-48b1-a769-3c6a907ba6d0",
+      "name": "Not fix query?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Field": {
+      "main": [
+        [
+          {
+            "node": "Not fix query?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question": {
+      "main": [
+        []
+      ]
+    },
+    "Not fix query?": {
+      "main": [
+        [
+          {
+            "node": "Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "520f9de8-41c4-44cf-b1ed-0324268e6544",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "couawe5x9PgFl1CB",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "name": "Error",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        0
+      ],
+      "id": "03571803-2c66-4862-a1fc-d5ce7da7299e",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "ssanchezromer@uoc.edu",
+        "subject": "Problem in n8n",
+        "message": "={{ $json.n8n_message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        180,
+        0
+      ],
+      "id": "fd0d658c-10a1-42bc-b6d3-3949904032a0",
+      "name": "Gmail",
+      "webhookId": "e3edde41-7090-4465-8cf9-0d446028399d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PRrSDecf41OTiYjK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c514b5b9-626b-4ed1-8252-71ae5551e28a",
+              "name": "url",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            },
+            {
+              "id": "c1761bf2-0c7f-4d9f-a7f3-44d6d805fafa",
+              "name": "message",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "379709f3-725e-47e2-977e-ce82366dfe58",
+              "name": "stack",
+              "value": "={{ $json.execution.error.stack }}",
+              "type": "string"
+            },
+            {
+              "id": "14ca897f-bb20-4e0f-bdfa-fec1acc09a0d",
+              "name": "workflow_name",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "18633b7b-24cd-44c6-8564-dc97ad099735",
+              "name": "workflow_id",
+              "value": "={{ $json.workflow.id }}",
+              "type": "string"
+            },
+            {
+              "id": "9ab5d293-051c-403b-802d-d7919c499d0b",
+              "name": "n8n_message",
+              "value": "=n8n error:\n\n- Workflow:\n{{ $json.workflow.name }}\n\n-Execution URL: \n{{ $json.execution.url }}\n\n-Error message:\n{{ $json.execution.error.message }}\n\n- Stack:\n{{ $json.execution.error.stack }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "d4b1772d-f0e4-41f1-b91d-1b352c560140",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "## Error\n",
+        "height": 240,
+        "width": 680
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -360,
+        -60
+      ],
+      "typeVersion": 1,
+      "id": "2fab8ad6-8819-4778-80a9-df3eb70ea60b",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e1b37234-9a60-4564-8bf6-8ded996791c5",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "LakByOuKyMcrF7gY",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

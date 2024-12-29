@@ -1,0 +1,551 @@
+{
+  "name": "Get call code and title",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=### Goal:\nYour goal is to identify if a call_code and call_title are present in the user's input. If not search into the conversation history. It should return these values in JSON format. If no matching call_code and call_title can be found, the response should include empty strings or the value that is present.\n\n### Steps:\n\n1. Analyze the user input and/or the conversation context.\n2. Determine if the input contains references to a specific call, funding opportunity, or grant.\n3. If call_code and call_title are identified, return them in the JSON response.\n4. If only one of call_code or call_title is present, populate the value found and leave the other empty.\n5. If neither call_code nor call_title is identified, return both fields as empty strings.\n\n### Output format:\n\nIf call_code and call_title are identified, provide the following JSON format:\n{\n  \"call_code\": \"<call_code>\",\n  \"call_title\": \"<call_title>\"\n}\n\nIf no specific values can be identified, respond with:\n{\n  \"call_code\": \"\",\n  \"call_title\": \"\"\n}\n\n### Important Notes:\n\n- Ensure the identification of call_code and call_title is strictly focused on calls, funding opportunities, grants, and proposals.\n- Only return meaningful information based on the context of the user's conversation or input.\n- Takes in count the conversation history.\n- Provide responses strictly in the required JSON format.\n\n### Example Inputs and Outputs:\n\n1. Input: \"Can you give me details about call code ABC123 and title GreenTech Initiative?\"\nOutput:\n{\n  \"call_code\": \"ABC123\",\n  \"call_title\": \"GreenTech Initiative\"\n}\n\n2. Input: \"Tell me about call code XYZ456.\"\nOutput:\n{\n  \"call_code\": \"XYZ456\",\n  \"call_title\": \"\"\n}\n3. Input: \"I want information regarding the Solar Funding Proposal.\"\nOutput:\n{\n  \"call_code\": \"\",\n  \"call_title\": \"Solar Funding Proposal\"\n}\n4. Input: \"Any updates on new grants?\"\nOutput:\n{\n  \"call_code\": \"\",\n  \"call_title\": \"\"\n}\n\n\nYour turn!\nInput: {{ $json.chatInput }}\nOutput:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        640,
+        -400
+      ],
+      "id": "182cd7a8-580c-43b2-a8f5-00e85bc40a86",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        -400
+      ],
+      "id": "e17ac46e-2801-4cda-80cc-2d42340a0875",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91266cf5-ac91-40f7-b7b5-b80a0c496972",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3ae3c945-a080-461a-a44f-8cae5e420c9e",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        -400
+      ],
+      "id": "2f5040f2-2b9a-481d-ae79-43cc805f7540",
+      "name": "Edit Field"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        -160
+      ],
+      "id": "e61c81cb-92ea-4f12-9e3c-1dd1138383db",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sZqBM43fLd9wJOda",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import json\nimport re\n\n# output = json.loads(_input.first().json[\"output\"])\noutput = str(_input.first().json[\"output\"])\npattern = r'\\{\\s*\"call_code\":\\s*\".*?\",\\s*\"call_title\":\\s*\".*?\"\\s*\\}'\n\n\nmatch = re.search(pattern, output)\n\ncall_code = \"\"\ncall_title = \"\"\nif match:\n  json_data = json.loads(match.group())  # Convertir a diccionario\n  if \"call_code\" in json_data and \"call_title\" in json_data:\n    call_code = str(json_data[\"call_code\"])\n    call_title = str(json_data[\"call_title\"])\n\nreturn {\n  \"call_code\" :  call_code,\n  \"call_title\" : call_title,\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        -400
+      ],
+      "id": "f8bb97ad-2cba-4ba8-8176-5cf2a9f654dd",
+      "name": "Code & Title"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b-instruct-q3_K_L",
+        "options": {
+          "temperature": 0.2,
+          "numCtx": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -160
+      ],
+      "id": "be8ebb72-3c83-439b-aa8f-79e7c761aabb",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eyEBAqW1xH6h7KLn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ac64dfbe-3b54-458d-8e25-e7938fb73748",
+              "leftValue": "={{ $json.call_code }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0bb4a9eb-c907-45ef-9f7a-3cb6487d355c",
+              "leftValue": "={{ $json.call_title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1140,
+        -400
+      ],
+      "id": "efa0786d-4bac-4c9d-8d75-bd1265955fe5",
+      "name": "No title"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ac64dfbe-3b54-458d-8e25-e7938fb73748",
+              "leftValue": "={{ $json.call_code }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0bb4a9eb-c907-45ef-9f7a-3cb6487d355c",
+              "leftValue": "={{ $json.call_title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        -240
+      ],
+      "id": "f64a80f7-1d03-4e95-b3f6-d471b7691d5c",
+      "name": "No code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d4aa610-3050-4d29-9170-8e75a04772f3",
+              "name": "query",
+              "value": "=SELECT call_code, call_title from calls_basic_information WHERE call_title LIKE '%{{ $json.call_title }}%'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1620,
+        -320
+      ],
+      "id": "37cbf635-bd75-43c5-8e2a-ef252f62147c",
+      "name": "SQL code"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        1780,
+        -500
+      ],
+      "id": "963cbacc-2238-4c7a-8ddf-f2f45e4bf761",
+      "name": "Search title",
+      "credentials": {
+        "mySql": {
+          "id": "YVMSvciBFRX5zwTd",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        1780,
+        -320
+      ],
+      "id": "0c9d8c51-e71a-4b1c-8f24-dce1068f5f30",
+      "name": "Search code",
+      "credentials": {
+        "mySql": {
+          "id": "YVMSvciBFRX5zwTd",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "47615e2c-163c-4921-a46a-e333102a6c50",
+              "name": "output",
+              "value": "=The call_code is '{{ $json.call_code }}' and the call_title is '{{ $json.call_title }}'.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -80
+      ],
+      "id": "31f05b00-5c24-4702-8291-8f737b8391b7",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d4aa610-3050-4d29-9170-8e75a04772f3",
+              "name": "query",
+              "value": "=SELECT call_code, call_title from calls_basic_information WHERE call_code LIKE '%{{ $json.call_code }}%'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1360,
+        -500
+      ],
+      "id": "602004ff-0021-412d-af04-5d40770aa02e",
+      "name": "SQL title"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "47615e2c-163c-4921-a46a-e333102a6c50",
+              "name": "output",
+              "value": "=The call_code is '{{ $json.call_code }}' and the call_title is '{{ $json.call_title }}'.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -500
+      ],
+      "id": "6607e4e4-8f00-470a-95d8-3c4d5d7b2e12",
+      "name": "Response search title"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "47615e2c-163c-4921-a46a-e333102a6c50",
+              "name": "output",
+              "value": "=The call_code is '{{ $json.call_code }}' and the call_title is '{{ $json.call_title }}'.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -320
+      ],
+      "id": "b7818590-374a-43d3-b5f3-4abdb63f6868",
+      "name": "Response search code"
+    },
+    {
+      "parameters": {
+        "content": "## Get call code and call title\n- Determine call code and call title in user's question or conversation history\n- If only gets one of these call identifiers search the other\n- If gets both or none response",
+        "height": 660,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        200,
+        -580
+      ],
+      "typeVersion": 1,
+      "id": "f2348c2e-5dca-40e1-a3f4-5b3bd2f76159",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "query": "CEF-DIG-2024-EUROQCI-WORKS European Quantum Communication Infrastructure - The EuroQCI initiative - Works",
+          "chatInput": "What are the eligibility criteria for grant with call code ‘CEF-DIG-2024-EUROQCI-WORKS’ and call title ‘European Quantum Communication Infrastructure - The EuroQCI initiative - Works’? ",
+          "sessionId": "d6ee663e-7d98-4e4e-babc-f152b7992c07 - Based on this call code ‘CEF-DIG-2024-EUROQCI-WORKS’ and call title ‘European Quantum Communication "
+        }
+      }
+    ]
+  },
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code & Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Field": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code & Title": {
+      "main": [
+        [
+          {
+            "node": "No title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No title": {
+      "main": [
+        [
+          {
+            "node": "SQL title",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No code": {
+      "main": [
+        [
+          {
+            "node": "SQL code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQL code": {
+      "main": [
+        [
+          {
+            "node": "Search code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQL title": {
+      "main": [
+        [
+          {
+            "node": "Search title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search title": {
+      "main": [
+        [
+          {
+            "node": "Response search title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search code": {
+      "main": [
+        [
+          {
+            "node": "Response search code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "d061c2fa-c3d4-4385-8180-24cde3360c42",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "F3q53rJfQeojkSCi",
+  "tags": [
+    {
+      "createdAt": "2024-12-04T13:49:48.129Z",
+      "updatedAt": "2024-12-04T13:49:48.129Z",
+      "id": "xxBU6l4CZLadHyeF",
+      "name": "TFM"
+    }
+  ]
+}

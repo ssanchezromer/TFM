@@ -1,7 +1,6 @@
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import uuid
 import requests
 
 
@@ -131,8 +130,14 @@ class QdrantVectorial:
         return chunks
 
     @staticmethod
-    def generate_unique_id():
-        return str(uuid.uuid4())
+    def generate_id(file_id, i):
+        """
+        Genera un ID único para un fragmento de texto.
+        :param file_id: file identifier
+        :param i: page number
+        :return: identifier qdrant
+        """
+        return int(f"{file_id:04}{i + 1:04}"),  # file_id (4 digits) + page (4 digits),
 
     def insert_full_text(self, file_id: str, file_url: str, docs: list):
         """
@@ -154,7 +159,7 @@ class QdrantVectorial:
             # Prepare points for insertion into Qdrant
             points = [
                 PointStruct(
-                    id=int(f"{file_id:04}{i + 1:04}"),  # file_id (4 digits) + page (3 digits),
+                    id=self.generate_id(file_id, i),
                     vector=embedding,
                     payload={
                         "content": doc.page_content,
@@ -246,16 +251,27 @@ class QdrantVectorial:
             list: A list of dictionaries containing the IDs, vectors, and metadata of the points in the collection.
         """
         try:
+            # file_ids to list of integers
+            file_ids = [int(file_id) for file_id in file_ids]
             query_vector = self.encoder.get_embedding(question)
+            # query_filter = models.Filter(
+            #     must=[
+		    #     {
+            #       "key": "metadata.file_id",
+            #       "match": {
+            #         "any": file_ids
+            #         }
+            #     }
+    	    #     ])
+
             query_filter = models.Filter(
                 must=[
-		        {
-                  "key": "metadata.file_id",
-                  "match": {
-                    "any": file_ids
-                    }
-                }
-    	        ])
+                    models.FieldCondition(
+                        key="metadata.file_id",
+                        match=models.MatchAny(any=file_ids),
+                    )
+                ])
+
 
             # Perform the search
             points = self.client.search(
@@ -269,7 +285,3 @@ class QdrantVectorial:
         except Exception as e:
             print(f"Error fetching data from collection '{self.collection_name}': {e}")
             return []
-
-# Ejecución de prueba
-# generator = EmbeddingGenerator()
-# embedding = generator.get_embedding('Prueba de texto')
