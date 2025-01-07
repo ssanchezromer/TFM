@@ -2,6 +2,9 @@ from EUFunding import EUFunding
 # from Fandit_7experts import Fandit
 import time
 import warnings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)

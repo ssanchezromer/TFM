@@ -254,15 +254,6 @@ class QdrantVectorial:
             # file_ids to list of integers
             file_ids = [int(file_id) for file_id in file_ids]
             query_vector = self.encoder.get_embedding(question)
-            # query_filter = models.Filter(
-            #     must=[
-		    #     {
-            #       "key": "metadata.file_id",
-            #       "match": {
-            #         "any": file_ids
-            #         }
-            #     }
-    	    #     ])
 
             query_filter = models.Filter(
                 must=[

@@ -1,8 +1,6 @@
 # Description: Flask API to run endpoints in port 5000
 # Author: Sergio Sánchez Romero
 # Date: 2024-12-01
-import os
-
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify
 from selenium.webdriver import Keys
@@ -15,10 +13,11 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
 app = Flask(__name__)
+
+# Configuración del modelo Ollama
+OLLAMA_URL = "http://host.docker.internal:11434/api/generate"
 
 
 def get_prompt_template(question):
@@ -156,9 +155,9 @@ def get_points():
 
         llm = ChatOpenAI(
             temperature=0.1,
-            model_name=os.getenv("OLLAMA_MODEL_SUMMARIZE", "llama3.2:1b-instruct-q3_K_L"),
+            model_name="llama3.2:1b-instruct-q3_K_L",
             api_key="ollama",
-            base_url=os.getenv("OLLAMA_URL", "http://host.docker.internal:11434/v1"),
+            base_url="http://host.docker.internal:11434/v1",
         )
         prompt_template = f"Write a summary of the document in base of the following question: {question}."
         prompt_template += """Only include information that is part of the document. 
@@ -308,7 +307,7 @@ def get_question():
             "top_k": 50
         }
 
-        response = requests.post(os.getenv("OLLAMA_URL_GENERATE"), json=ollama_payload)
+        response = requests.post(OLLAMA_URL, json=ollama_payload)
 
         if response.status_code != 200:
             return jsonify({"error": "Error al comunicarse con Ollama.", "details": response.text}), 500
